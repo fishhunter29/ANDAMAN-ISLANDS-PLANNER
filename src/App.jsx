@@ -15,12 +15,41 @@ const addDays = (yyyy_mm_dd, n) => {
   return d.toISOString().slice(0, 10);
 };
 
+// Heuristic: infer "moods" for a location if not provided in data
+function inferMoods(loc) {
+  const moods = new Set();
+
+  const interest = (loc.interest || "").toLowerCase();
+  const name = (loc.name || "").toLowerCase();
+  const dur = Number.isFinite(loc.durationHrs) ? loc.durationHrs : 2;
+
+  // Baseline by duration
+  if (dur <= 2) moods.add("Relaxed");
+  if (dur >= 3) moods.add("Balanced");
+  if (dur >= 4) moods.add("Active");
+
+  // Interest-based
+  if (/snorkel|scuba|dive|trek|kayak|surf|jet|parasail/.test(interest)) moods.add("Adventure");
+  if (/beach|sunset|view|cove|lagoon|mangrove/.test(interest)) moods.add("Relaxed");
+  if (/museum|culture|heritage|jail|cellular|memorial/.test(interest)) moods.add("Family");
+  if (/wildlife|reef|coral|mangrove|bird|nature|peak/.test(interest)) moods.add("Photography");
+
+  // Offbeat names/keywords
+  if (/lighthouse|mangrove|cave|long island|mud volcano|baratang|ross|smith|saddle peak/.test(name)) {
+    moods.add("Offbeat");
+  }
+
+  // Safe default
+  if (moods.size === 0) moods.add("Balanced");
+  return Array.from(moods);
+}
+
 /** =========================
  *  Static constants
  *  ========================= */
 const DEFAULT_ISLANDS = ["Port Blair", "Havelock", "Neil", "Long Island", "Diglipur"];
 
-// Pricing knobs (adjust later or load from CMS)
+// Pricing (placeholder logic you can tune later)
 const FERRY_BASE_ECON = 1500; // per pax, per leg
 const FERRY_CLASS_MULT = { Economy: 1, Deluxe: 1.4, Luxury: 1.9 };
 
@@ -33,15 +62,13 @@ const CAB_MODELS = [
 const P2P_RATE_PER_HOP = 500;
 const SCOOTER_DAY_RATE = 800;
 
-const SEATMAP_URL = "https://seatmap.example.com"; // <-- replace with your actual seat-map page
+const SEATMAP_URL = "https://seatmap.example.com"; // replace with your real seat-map URL
 
 /** ==========================================
- *  Better itinerary generator (duration-aware)
- *  Packs ~7h per day & inserts ferries
- *  Adds default "Airport Arrival" on Day 1
+ *  Itinerary generator (duration-aware)
+ *  Packs ~7h/day & inserts ferries, Day 1 = Airport
  *  ========================================== */
 function orderByBestTime(items) {
-  // simple ordering: morning -> afternoon -> evening -> other
   const rank = (it) => {
     const arr = (it.bestTimes || []).map((x) => String(x).toLowerCase());
     if (arr.some((t) => t.includes("morning") || t.includes("sunrise"))) return 0;
@@ -54,8 +81,7 @@ function orderByBestTime(items) {
 
 function generateItineraryDays(selectedLocs, startFromPB = true) {
   const days = [];
-
-  // Day 1: Airport arrival in Port Blair (always)
+  // Day 1 always starts with Airport Arrival in Port Blair
   days.push({
     island: "Port Blair",
     items: [
@@ -73,7 +99,7 @@ function generateItineraryDays(selectedLocs, startFromPB = true) {
     (byIsland[l.island] ||= []).push(l);
   });
 
-  // order islands alphabetically in DEFAULT_ISLANDS, PB first if present
+  // sort islands, PB first if present
   let order = Object.keys(byIsland).sort(
     (a, b) => DEFAULT_ISLANDS.indexOf(a) - DEFAULT_ISLANDS.indexOf(b)
   );
@@ -81,7 +107,7 @@ function generateItineraryDays(selectedLocs, startFromPB = true) {
     order = ["Port Blair", ...order.filter((x) => x !== "Port Blair")];
   }
 
-  // per island → bucket into days by ~7h budget (ensure 2–4 stops if possible)
+  // per island → bucket into days by ~7h (aim 2–4 stops/day)
   order.forEach((island, idx) => {
     const locs = orderByBestTime(byIsland[island] || []);
     let dayBucket = [];
@@ -89,7 +115,7 @@ function generateItineraryDays(selectedLocs, startFromPB = true) {
 
     const flushDay = () => {
       if (!dayBucket.length) return;
-      // ensure min 2 stops (if available)
+      // ensure at least 2 stops if available
       if (dayBucket.length === 1 && locs.length) {
         const next = locs.shift();
         if (next) {
@@ -144,7 +170,7 @@ function generateItineraryDays(selectedLocs, startFromPB = true) {
 }
 
 /** =========================
- *  The Wireframe Component
+ *  App Component
  *  ========================= */
 export default function CreateTourWireframeDemo() {
   // Load real data from /public/data
@@ -162,9 +188,7 @@ export default function CreateTourWireframeDemo() {
           fetch("/data/ferries.json"),
         ]);
         const [locJson, actJson, ferJson] = await Promise.all([
-          locRes.json(),
-          actRes.json(),
-          ferRes.json(),
+          locRes.json(), actRes.json(), ferRes.json()
         ]);
         setLocations(locJson || []);
         setActivities(actJson || []);
@@ -183,8 +207,8 @@ export default function CreateTourWireframeDemo() {
   }, [locations]);
 
   // —— App state
-  const [step, setStep] = useState(0); // 0..5
-  const [startDate, setStartDate] = useState(""); // optional; blank = no dates
+  const [step, setStep] = useState(0);
+  const [startDate, setStartDate] = useState(""); // optional
   const [adults, setAdults] = useState(2);
   const [infants, setInfants] = useState(0);
   const pax = adults + infants;
@@ -192,22 +216,49 @@ export default function CreateTourWireframeDemo() {
 
   // Step 1: selection
   const [selectedIds, setSelectedIds] = useState([]);
+
+  // hide airport from selection (arrival is default)
+  const selectableLocations = useMemo(
+    () => locations.filter(l => !/airport/i.test(l.name || "")),
+    [locations]
+  );
   const selectedLocs = useMemo(
     () => locations.filter((l) => selectedIds.includes(l.id)),
     [locations, selectedIds]
   );
 
-  // Scooters selected per island (affects logistics)
-  const [scooterIslands, setScooterIslands] = useState(new Set()); // e.g., {"Havelock","Neil"}
+  // Mood + Island filters
+  const [islandFilter, setIslandFilter] = useState("All");
+  const [moodFilter, setMoodFilter] = useState("All");
 
-  // Step 2: itinerary (list of days)
+  // Attach moods (either from data or inferred)
+  const selectableWithMoods = useMemo(
+    () => selectableLocations.map(l => ({
+      ...l,
+      moods: Array.isArray(l.moods) && l.moods.length ? l.moods : inferMoods(l)
+    })),
+    [selectableLocations]
+  );
+
+  // Filter what we display by island + mood
+  const filteredLocations = useMemo(
+    () => selectableWithMoods.filter(l =>
+      (islandFilter === "All" || l.island === islandFilter) &&
+      (moodFilter === "All" || (l.moods || []).includes(moodFilter))
+    ),
+    [selectableWithMoods, islandFilter, moodFilter]
+  );
+
+  // scooters per island
+  const [scooterIslands, setScooterIslands] = useState(new Set());
+
+  // Step 2: itinerary
   const [days, setDays] = useState([]);
-  // Re-generate whenever selection changes so costs update dynamically in summary—always
   useEffect(() => {
     setDays(generateItineraryDays(selectedLocs, startPB));
   }, [selectedLocs, startPB]);
 
-  // Day editing helpers
+  // Day helpers
   const addEmptyDayAfter = (index) => {
     const copy = [...days];
     copy.splice(index + 1, 0, { island: copy[index]?.island || "Port Blair", items: [], transport: "Point-to-Point" });
@@ -232,7 +283,7 @@ export default function CreateTourWireframeDemo() {
     setDays(copy);
   };
 
-  // Step 3: hotels chosen per island-night (placeholder mapping)
+  // Step 3: hotels
   const [chosenHotels, setChosenHotels] = useState({});
   const nightsByIsland = useMemo(() => {
     const map = {};
@@ -261,7 +312,6 @@ export default function CreateTourWireframeDemo() {
     "Long Island": [{ id: "li_h1", name: "LI Mid Hotel", tier: "Mid", sell_price: 6199 }],
     Diglipur: [{ id: "dg_h1", name: "DG Lodge", tier: "Value", sell_price: 2899 }],
   }), []);
-
   const chooseHotel = (island, hotelId) =>
     setChosenHotels((p) => ({ ...p, [island]: hotelId }));
 
@@ -271,19 +321,17 @@ export default function CreateTourWireframeDemo() {
     cabModelId: CAB_MODELS[1].id, // default SUV
   });
 
-  // Step 5: add-ons — suggestions (fallback to all if no mapping)
+  // Step 5: add-ons (suggested then fallback)
   const suggestedActivities = useMemo(() => {
     const sel = new Set(selectedIds);
     const matched = activities.filter((a) => (a.locationIds || []).some((id) => sel.has(id)));
     return matched.length ? matched : activities;
   }, [activities, selectedIds]);
-
   const [addonIds, setAddonIds] = useState([]);
 
   /** =========================
-   *  Dynamic costs (DYNAMIC!)
+   *  Dynamic costs
    *  ========================= */
-  // Hotels
   const hotelsTotal = useMemo(() => {
     let sum = 0;
     Object.entries(nightsByIsland).forEach(([island, nights]) => {
@@ -295,27 +343,23 @@ export default function CreateTourWireframeDemo() {
     return sum;
   }, [nightsByIsland, chosenHotels, MOCK_HOTELS]);
 
-  // Add-ons
   const addonsTotal = useMemo(
-    () =>
-      addonIds.reduce((acc, id) => {
-        const ad = activities.find((a) => a.id === id);
-        return acc + safeNum(ad?.price);
-      }, 0),
+    () => addonIds.reduce((acc, id) => {
+      const ad = activities.find((a) => a.id === id);
+      return acc + safeNum(ad?.price);
+    }, 0),
     [addonIds, activities]
   );
 
-  // Ferry cost = per ferry leg * pax * class multiplier
   const ferryLegCount = useMemo(
     () => days.reduce((acc, d) => acc + d.items.filter((i) => i.type === "ferry").length, 0),
     [days]
   );
   const ferryTotal = useMemo(() => {
     const mult = FERRY_CLASS_MULT[essentials.ferryClass] ?? 1;
-    return ferryLegCount * FERRY_BASE_ECON * mult * Math.max(1, adults); // infants often free; adjust later
+    return ferryLegCount * FERRY_BASE_ECON * mult * Math.max(1, adults); // infants assumed free
   }, [ferryLegCount, essentials.ferryClass, adults]);
 
-  // Ground/scooter costs (per day depending on transport or scooter selection)
   const cabDayRate = useMemo(() => {
     const found = CAB_MODELS.find((c) => c.id === essentials.cabModelId);
     return found ? found.dayRate : CAB_MODELS[0].dayRate;
@@ -324,24 +368,17 @@ export default function CreateTourWireframeDemo() {
   const logisticsTotal = useMemo(() => {
     let sum = 0;
     days.forEach((day) => {
-      const isFerryDay = day.items.some((i) => i.type === "ferry");
-      if (isFerryDay) return; // ferry cost handled separately
+      if (day.items.some((i) => i.type === "ferry")) return; // ferry handled separately
       const stops = day.items.filter((i) => i.type === "location").length;
 
-      // Scooter override
+      // scooter override
       if (scooterIslands.has(day.island)) {
         sum += SCOOTER_DAY_RATE;
         return;
       }
-
-      // Day Cab vs P2P
-      if (day.transport === "Day Cab") {
-        sum += cabDayRate;
-      } else if (day.transport === "Point-to-Point") {
-        sum += Math.max(1, stops - 1) * P2P_RATE_PER_HOP;
-      } else if (day.transport === "Scooter") {
-        sum += SCOOTER_DAY_RATE;
-      }
+      if (day.transport === "Day Cab") sum += cabDayRate;
+      else if (day.transport === "Scooter") sum += SCOOTER_DAY_RATE;
+      else sum += Math.max(1, stops - 1) * P2P_RATE_PER_HOP; // P2P
     });
     return sum;
   }, [days, scooterIslands, cabDayRate]);
@@ -357,14 +394,11 @@ export default function CreateTourWireframeDemo() {
     </div>;
   }
 
-  // helpers
   const toggleScooter = (island) => {
     const next = new Set(scooterIslands);
-    if (next.has(island)) next.delete(island);
-    else next.add(island);
+    next.has(island) ? next.delete(island) : next.add(island);
     setScooterIslands(next);
   };
-
   const islandsInPlan = Array.from(new Set(days.map((d) => d.island))).filter(Boolean);
 
   return (
@@ -391,10 +425,10 @@ export default function CreateTourWireframeDemo() {
                   <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
                 </Field>
                 <Field label="Adults">
-                  <input type="number" min={1} value={adults} onChange={(e) => (setAdults(Number(e.target.value) || 0))} />
+                  <input type="number" min={1} value={adults} onChange={(e) => setAdults(Number(e.target.value) || 0)} />
                 </Field>
                 <Field label="Infants">
-                  <input type="number" min={0} value={infants} onChange={(e) => (setInfants(Number(e.target.value) || 0))} />
+                  <input type="number" min={0} value={infants} onChange={(e) => setInfants(Number(e.target.value) || 0)} />
                 </Field>
               </Row>
               <Row>
@@ -407,28 +441,50 @@ export default function CreateTourWireframeDemo() {
           {step === 1 && (
             <Card title="Select Locations">
               <Row>
-                <Field label="Filter by island">
-                  <select onChange={(e) => {
-                    const v = e.target.value;
-                    if (v === "All") return setSelectedIds(locations.map(l => l.id));
-                    setSelectedIds(locations.filter(l => l.island === v).map(l => l.id));
-                  }}>
+                <Field label="Island">
+                  <select value={islandFilter} onChange={(e) => setIslandFilter(e.target.value)}>
                     <option>All</option>
                     {islandsList.map((i) => <option key={i}>{i}</option>)}
                   </select>
                 </Field>
-                <div style={{ fontSize: 12, color: "#475569", alignSelf: "end" }}>{selectedLocs.length} selected</div>
+
+                <Field label="Mood of tour">
+                  <select value={moodFilter} onChange={(e) => setMoodFilter(e.target.value)}>
+                    <option>All</option>
+                    <option>Relaxed</option>
+                    <option>Balanced</option>
+                    <option>Active</option>
+                    <option>Offbeat</option>
+                    <option>Family</option>
+                    <option>Adventure</option>
+                    <option>Photography</option>
+                  </select>
+                </Field>
+
+                <div style={{ fontSize: 12, color: "#475569", alignSelf: "end" }}>
+                  {selectedLocs.length} selected
+                </div>
               </Row>
+
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px,1fr))", gap: 12 }}>
-                {locations.map((l) => {
+                {filteredLocations.map((l) => {
                   const picked = selectedIds.includes(l.id);
                   return (
                     <div key={l.id} style={{ border: "1px solid #e5e7eb", background: "white", borderRadius: 12, padding: 12 }}>
                       <div style={{ height: 96, background: "#e2e8f0", borderRadius: 8, marginBottom: 8 }} />
                       <b style={{ fontSize: 14 }}>{l.name}</b>
                       <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
-                        {l.island} • {l.durationHrs ?? 2}h
+                        {l.island} • {(l.durationHrs ?? 2)}h
                       </div>
+                      {/* Mood badges */}
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
+                        {(l.moods || []).slice(0, 3).map((m) => (
+                          <span key={m} style={{ fontSize: 10, padding: "2px 6px", borderRadius: 999, border: "1px solid #e5e7eb", color: "#334155", background: "#f8fafc" }}>
+                            {m}
+                          </span>
+                        ))}
+                      </div>
+
                       <button
                         onClick={() =>
                           setSelectedIds((prev) =>
@@ -448,6 +504,7 @@ export default function CreateTourWireframeDemo() {
                   );
                 })}
               </div>
+
               <FooterNav onPrev={() => setStep(0)} onNext={() => setStep(2)} />
             </Card>
           )}
@@ -542,7 +599,6 @@ export default function CreateTourWireframeDemo() {
           {step === 4 && (
             <Card title="Essentials">
               <div style={{ display: "grid", gap: 14 }}>
-                {/* Ferry config */}
                 <div style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: 12, background: "white" }}>
                   <b>Ferry</b>
                   <Row>
@@ -561,7 +617,6 @@ export default function CreateTourWireframeDemo() {
                   </Row>
                 </div>
 
-                {/* Ground transport */}
                 <div style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: 12, background: "white" }}>
                   <b>Ground Transport</b>
                   <Row>
@@ -575,14 +630,20 @@ export default function CreateTourWireframeDemo() {
                       </select>
                     </Field>
                   </Row>
-                  <div style={{ fontSize: 12, color: "#475569", marginBottom: 6 }}>Scooter per island (overrides transport to scooter on those islands):</div>
+                  <div style={{ fontSize: 12, color: "#475569", marginBottom: 6 }}>
+                    Scooter per island (overrides transport to scooter on those islands):
+                  </div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                    {islandsInPlan.map((isl) => (
+                    {Array.from(new Set(days.map(d => d.island))).filter(Boolean).map((isl) => (
                       <label key={isl} style={{ border: "1px solid #e5e7eb", borderRadius: 8, padding: "6px 10px", background: "white" }}>
                         <input
                           type="checkbox"
                           checked={scooterIslands.has(isl)}
-                          onChange={() => toggleScooter(isl)}
+                          onChange={() => {
+                            const next = new Set(scooterIslands);
+                            next.has(isl) ? next.delete(isl) : next.add(isl);
+                            setScooterIslands(next);
+                          }}
                           style={{ marginRight: 6 }}
                         />
                         {isl} — {formatINR(SCOOTER_DAY_RATE)}/day
@@ -630,7 +691,7 @@ export default function CreateTourWireframeDemo() {
           )}
         </section>
 
-        {/* Desktop summary (cost-only, truly dynamic) */}
+        {/* Desktop summary (cost-only, dynamic) */}
         <aside className="sidebar">
           <div style={{ position: "sticky", top: 80 }}>
             <div style={{ border: "1px solid #e5e7eb", background: "white", borderRadius: 12, padding: 16 }}>
@@ -639,8 +700,6 @@ export default function CreateTourWireframeDemo() {
                 <div>Start date: {startDate || "Not set"}</div>
                 <div>Days planned: {days.length}</div>
                 <div>Travellers: {adults} adult(s){infants ? `, ${infants} infant(s)` : ""}</div>
-
-                {/* Pure cost breakdown */}
                 <div style={{ marginTop: 8, borderTop: "1px dashed #e5e7eb", paddingTop: 8 }}>
                   <div>Hotels: <b>{formatINR(hotelsTotal)}</b></div>
                   <div>Ferries: <b>{formatINR(ferryTotal)}</b></div>
@@ -648,16 +707,12 @@ export default function CreateTourWireframeDemo() {
                   <div>Add-ons: <b>{formatINR(addonsTotal)}</b></div>
                 </div>
                 <div style={{ marginTop: 8, borderTop: "2px solid #0ea5e9", paddingTop: 8, fontSize: 16 }}>
-                  Total (indicative): <b>{formatINR(grandTotal)}</b>
+                  Total (indicative): <b>{formatINR(hotelsTotal + addonsTotal + logisticsTotal + ferryTotal)}</b>
                 </div>
               </div>
               <button
                 onClick={() => alert("This would submit a single Request-to-Book for the whole itinerary.")}
-                style={{
-                  marginTop: 12, width: "100%", padding: "10px 12px",
-                  borderRadius: 10, border: "1px solid #0ea5e9",
-                  background: "#0ea5e9", color: "white", fontWeight: 700
-                }}
+                style={{ marginTop: 12, width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #0ea5e9", background: "#0ea5e9", color: "white", fontWeight: 700 }}
               >
                 Request to Book Full Trip
               </button>
@@ -668,7 +723,7 @@ export default function CreateTourWireframeDemo() {
 
       {/* Mobile sticky summary (cost-only) */}
       <MobileSummaryBar
-        grandTotal={grandTotal}
+        grandTotal={hotelsTotal + addonsTotal + logisticsTotal + ferryTotal}
         hotelsTotal={hotelsTotal}
         ferryTotal={ferryTotal}
         logisticsTotal={logisticsTotal}
@@ -683,6 +738,25 @@ export default function CreateTourWireframeDemo() {
  *  ========================= */
 function MobileSummaryBar({ grandTotal, hotelsTotal, ferryTotal, logisticsTotal, addonsTotal }) {
   const [open, setOpen] = useState(false);
+  const [startY, setStartY] = useState(null);
+  const [deltaY, setDeltaY] = useState(0);
+
+  // simple swipe-to-close
+  const onTouchStart = (e) => {
+    setStartY(e.touches[0].clientY);
+    setDeltaY(0);
+  };
+  const onTouchMove = (e) => {
+    if (startY == null) return;
+    const dy = e.touches[0].clientY - startY;
+    setDeltaY(dy > 0 ? dy : 0);
+  };
+  const onTouchEnd = () => {
+    if (deltaY > 80) setOpen(false); // threshold to close
+    setStartY(null);
+    setDeltaY(0);
+  };
+
   return (
     <>
       <div className="mobile-summary">
@@ -691,20 +765,33 @@ function MobileSummaryBar({ grandTotal, hotelsTotal, ferryTotal, logisticsTotal,
           <b>{formatINR(grandTotal)}</b>
         </button>
       </div>
+
       {open && (
         <div className="mobile-summary__overlay" onClick={() => setOpen(false)}>
-          <div className="mobile-summary__sheet" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="mobile-summary__sheet"
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+            style={{ transform: `translateY(${deltaY}px)` }}
+          >
             <div className="mobile-summary__grab" />
-            <div style={{ fontWeight: 700, marginBottom: 8 }}>Cost Breakdown</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <div style={{ fontWeight: 700 }}>Cost Breakdown</div>
+              <button onClick={() => setOpen(false)} style={{ border: 'none', background: 'transparent', fontSize: 18 }}>×</button>
+            </div>
+
             <div style={{ fontSize: 14, display: "grid", gap: 6 }}>
               <div>Hotels: <b>{formatINR(hotelsTotal)}</b></div>
               <div>Ferries: <b>{formatINR(ferryTotal)}</b></div>
               <div>Ground transport: <b>{formatINR(logisticsTotal)}</b></div>
               <div>Add-ons: <b>{formatINR(addonsTotal)}</b></div>
-              <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: 8 }}>
+              <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: 8, marginTop: 6 }}>
                 Total: <b>{formatINR(grandTotal)}</b>
               </div>
             </div>
+
             <button className="mobile-summary__cta" onClick={() => alert("Lead submit from mobile summary")}>
               Request to Book
             </button>
