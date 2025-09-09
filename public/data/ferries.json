@@ -1,0 +1,26 @@
+[
+  {
+    "from": "Port Blair",
+    "to": "Havelock",
+    "operator": "Makruzz",
+    "depart": "07:30",
+    "arrive": "09:00",
+    "duration_label": "1.5h"
+  },
+  {
+    "from": "Havelock",
+    "to": "Neil",
+    "operator": "Green Ocean",
+    "depart": "11:30",
+    "arrive": "12:45",
+    "duration_label": "1.25h"
+  },
+  {
+    "from": "Neil",
+    "to": "Port Blair",
+    "operator": "Makruzz",
+    "depart": "15:00",
+    "arrive": "16:00",
+    "duration_label": "1.0h"
+  }
+]
