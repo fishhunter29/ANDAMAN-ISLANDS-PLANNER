@@ -1,0 +1,50 @@
+[
+  {
+    "id": "pb_airport",
+    "name": "Veer Savarkar International Airport",
+    "island": "Port Blair",
+    "best_time": "Arrival",
+    "duration_hrs": 0.5,
+    "tags": ["arrival", "start"]
+  },
+  {
+    "id": "loc_cellular",
+    "name": "Cellular Jail",
+    "island": "Port Blair",
+    "best_time": "Morning, Evening",
+    "duration_hrs": 1.5,
+    "tags": ["culture", "history", "family"]
+  },
+  {
+    "id": "loc_corbyns",
+    "name": "Corbyn’s Cove Beach",
+    "island": "Port Blair",
+    "best_time": "Afternoon",
+    "duration_hrs": 2,
+    "tags": ["beach", "easy"]
+  },
+  {
+    "id": "loc_elephant",
+    "name": "Elephant Beach",
+    "island": "Havelock",
+    "best_time": "Morning",
+    "duration_hrs": 3,
+    "tags": ["beach", "snorkel"]
+  },
+  {
+    "id": "loc_radhanagar",
+    "name": "Radhanagar Beach",
+    "island": "Havelock",
+    "best_time": "Sunset",
+    "duration_hrs": 3,
+    "tags": ["beach", "sunset"]
+  },
+  {
+    "id": "loc_natural_bridge",
+    "name": "Natural Bridge",
+    "island": "Neil",
+    "best_time": "Morning (low tide)",
+    "duration_hrs": 2,
+    "tags": ["viewpoint", "offbeat", "family"]
+  }
+]
