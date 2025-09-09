@@ -1,0 +1,26 @@
+[
+  {
+    "id": "adv_scuba",
+    "activity": "Scuba Diving",
+    "approx_cost_inr": 4000,
+    "special_locations": ["Havelock Island", "Neil Island"]
+  },
+  {
+    "id": "adv_snorkel",
+    "activity": "Snorkeling",
+    "approx_cost_inr": 2000,
+    "special_locations": ["Elephant Beach", "North Bay"]
+  },
+  {
+    "id": "adv_seawalk",
+    "activity": "Sea Walk",
+    "approx_cost_inr": 3800,
+    "special_locations": ["North Bay", "Elephant Beach"]
+  },
+  {
+    "id": "adv_parasail",
+    "activity": "Parasailing",
+    "approx_cost_inr": 3200,
+    "special_locations": ["Port Blair", "Havelock Island"]
+  }
+]
