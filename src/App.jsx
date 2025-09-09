@@ -737,9 +737,18 @@ export default function CreateTourWireframeDemo() {
  *  Mobile Summary Bar
  *  ========================= */
 function MobileSummaryBar({ grandTotal, hotelsTotal, ferryTotal, logisticsTotal, addonsTotal }) {
-  const [open, setOpen] = useState(false);
-  const [startY, setStartY] = useState(null);
-  const [deltaY, setDeltaY] = useState(0);
+  const [open, setOpen] = React.useState(false);
+  const [startY, setStartY] = React.useState(null);
+  const [deltaY, setDeltaY] = React.useState(0);
+  const [isSmall, setIsSmall] = React.useState(true); // default assume mobile
+
+  // Detect viewport size to show/hide on desktop without CSS
+  React.useEffect(() => {
+    const update = () => setIsSmall(window.innerWidth <= 768);
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
 
   // simple swipe-to-close
   const onTouchStart = (e) => {
@@ -752,31 +761,62 @@ function MobileSummaryBar({ grandTotal, hotelsTotal, ferryTotal, logisticsTotal,
     setDeltaY(dy > 0 ? dy : 0);
   };
   const onTouchEnd = () => {
-    if (deltaY > 80) setOpen(false); // threshold to close
+    if (deltaY > 80) setOpen(false); // threshold
     setStartY(null);
     setDeltaY(0);
   };
 
+  if (!isSmall) return null; // hide on desktop if CSS missing
+
+  const pillWrap = {
+    position: 'fixed', left: 0, right: 0, bottom: 12, zIndex: 50,
+    display: 'flex', justifyContent: 'center',
+  };
+  const pill = {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12,
+    width: 'calc(100% - 24px)', maxWidth: 480, padding: '12px 16px',
+    background: '#0ea5e9', color: '#fff', border: '1px solid #0ea5e9',
+    borderRadius: 999, fontWeight: 700,
+  };
+  const overlay = {
+    position: 'fixed', inset: 0, zIndex: 60,
+    background: 'rgba(15,23,42,0.35)', display: 'flex', alignItems: 'flex-end',
+  };
+  const sheet = {
+    width: '100%', background: '#fff',
+    borderTopLeftRadius: 16, borderTopRightRadius: 16,
+    padding: 16, boxShadow: '0 -6px 24px rgba(0,0,0,0.2)',
+    transform: `translateY(${deltaY}px)`,
+  };
+  const grab = {
+    width: 48, height: 4, borderRadius: 4, background: '#e5e7eb',
+    margin: '4px auto 12px auto',
+  };
+  const cta = {
+    marginTop: 14, width: '100%', padding: 12,
+    borderRadius: 10, border: '1px solid #0ea5e9',
+    background: '#0ea5e9', color: '#fff', fontWeight: 700,
+  };
+
   return (
     <>
-      <div className="mobile-summary">
-        <button className="mobile-summary__pill" onClick={() => setOpen(true)}>
+      <div style={pillWrap}>
+        <button style={pill} onClick={() => setOpen(true)}>
           <span>Total</span>
           <b>{formatINR(grandTotal)}</b>
         </button>
       </div>
 
       {open && (
-        <div className="mobile-summary__overlay" onClick={() => setOpen(false)}>
+        <div style={overlay} onClick={() => setOpen(false)}>
           <div
-            className="mobile-summary__sheet"
+            style={sheet}
             onClick={(e) => e.stopPropagation()}
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
-            style={{ transform: `translateY(${deltaY}px)` }}
           >
-            <div className="mobile-summary__grab" />
+            <div style={grab} />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <div style={{ fontWeight: 700 }}>Cost Breakdown</div>
               <button onClick={() => setOpen(false)} style={{ border: 'none', background: 'transparent', fontSize: 18 }}>×</button>
@@ -792,7 +832,7 @@ function MobileSummaryBar({ grandTotal, hotelsTotal, ferryTotal, logisticsTotal,
               </div>
             </div>
 
-            <button className="mobile-summary__cta" onClick={() => alert("Lead submit from mobile summary")}>
+            <button style={cta} onClick={() => alert("Lead submit from mobile summary")}>
               Request to Book
             </button>
           </div>
