@@ -192,7 +192,7 @@ export default function CreateTourWireframeDemo() {
         ]);
         setLocations(locJson || []);
         setActivities(actJson || []);
-        setFerries(ferJson || []);
+        setFerries(ferJson || []); // reserved for future seat-map integrations
         setDataStatus("ready");
       } catch (e) {
         console.error("Data load error:", e);
@@ -639,11 +639,7 @@ export default function CreateTourWireframeDemo() {
                         <input
                           type="checkbox"
                           checked={scooterIslands.has(isl)}
-                          onChange={() => {
-                            const next = new Set(scooterIslands);
-                            next.has(isl) ? next.delete(isl) : next.add(isl);
-                            setScooterIslands(next);
-                          }}
+                          onChange={() => toggleScooter(isl)}
                           style={{ marginRight: 6 }}
                         />
                         {isl} — {formatINR(SCOOTER_DAY_RATE)}/day
@@ -721,124 +717,114 @@ export default function CreateTourWireframeDemo() {
         </aside>
       </main>
 
-      {/* Mobile sticky summary (cost-only) */}
-      <MobileSummaryBar
-        grandTotal={hotelsTotal + addonsTotal + logisticsTotal + ferryTotal}
-        hotelsTotal={hotelsTotal}
-        ferryTotal={ferryTotal}
-        logisticsTotal={logisticsTotal}
-        addonsTotal={addonsTotal}
-      />
-    </div>
-  );
-}
-
-/** =========================
- *  Mobile Summary Bar
- *  ========================= */
-function MobileSummaryBar({ grandTotal, hotelsTotal, ferryTotal, logisticsTotal, addonsTotal }) {
-  const [open, setOpen] = React.useState(false);
-  const [startY, setStartY] = React.useState(null);
-  const [deltaY, setDeltaY] = React.useState(0);
-  const [isSmall, setIsSmall] = React.useState(true); // default assume mobile
-
-  // Detect viewport size to show/hide on desktop without CSS
-  React.useEffect(() => {
-    const update = () => setIsSmall(window.innerWidth <= 768);
-    update();
-    window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
-  }, []);
-
-  // simple swipe-to-close
-  const onTouchStart = (e) => {
-    setStartY(e.touches[0].clientY);
-    setDeltaY(0);
-  };
-  const onTouchMove = (e) => {
-    if (startY == null) return;
-    const dy = e.touches[0].clientY - startY;
-    setDeltaY(dy > 0 ? dy : 0);
-  };
-  const onTouchEnd = () => {
-    if (deltaY > 80) setOpen(false); // threshold
-    setStartY(null);
-    setDeltaY(0);
-  };
-
-  if (!isSmall) return null; // hide on desktop if CSS missing
-
-  const pillWrap = {
-    position: 'fixed', left: 0, right: 0, bottom: 12, zIndex: 50,
-    display: 'flex', justifyContent: 'center',
-  };
-  const pill = {
-    display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12,
-    width: 'calc(100% - 24px)', maxWidth: 480, padding: '12px 16px',
-    background: '#0ea5e9', color: '#fff', border: '1px solid #0ea5e9',
-    borderRadius: 999, fontWeight: 700,
-  };
-  const overlay = {
-    position: 'fixed', inset: 0, zIndex: 60,
-    background: 'rgba(15,23,42,0.35)', display: 'flex', alignItems: 'flex-end',
-  };
-  const sheet = {
-    width: '100%', background: '#fff',
-    borderTopLeftRadius: 16, borderTopRightRadius: 16,
-    padding: 16, boxShadow: '0 -6px 24px rgba(0,0,0,0.2)',
-    transform: `translateY(${deltaY}px)`,
-  };
-  const grab = {
-    width: 48, height: 4, borderRadius: 4, background: '#e5e7eb',
-    margin: '4px auto 12px auto',
-  };
-  const cta = {
-    marginTop: 14, width: '100%', padding: 12,
-    borderRadius: 10, border: '1px solid #0ea5e9',
-    background: '#0ea5e9', color: '#fff', fontWeight: 700,
-  };
-
-  return (
-    <>
-      <div style={pillWrap}>
-        <button style={pill} onClick={() => setOpen(true)}>
+      {/* --- FORCE-SHOW MOBILE SUMMARY (always visible) --- */}
+      <div
+        id="force-pill"
+        style={{
+          position: 'fixed',
+          left: 0,
+          right: 0,
+          bottom: 12,
+          zIndex: 9999,
+          display: 'flex',
+          justifyContent: 'center',
+          pointerEvents: 'none'
+        }}
+      >
+        <button
+          id="force-pill-btn"
+          onClick={() => {
+            const ov = document.getElementById('force-pill-ov');
+            if (ov) ov.style.display = 'flex';
+          }}
+          style={{
+            pointerEvents: 'auto',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 12,
+            width: 'calc(100% - 24px)',
+            maxWidth: 480,
+            padding: '12px 16px',
+            background: '#0ea5e9',
+            color: '#fff',
+            border: '1px solid #0ea5e9',
+            borderRadius: 999,
+            fontWeight: 700,
+            boxShadow: '0 8px 24px rgba(2,132,199,0.35)'
+          }}
+        >
           <span>Total</span>
-          <b>{formatINR(grandTotal)}</b>
+          <b>{formatINR(hotelsTotal + addonsTotal + logisticsTotal + ferryTotal)}</b>
         </button>
       </div>
 
-      {open && (
-        <div style={overlay} onClick={() => setOpen(false)}>
-          <div
-            style={sheet}
-            onClick={(e) => e.stopPropagation()}
-            onTouchStart={onTouchStart}
-            onTouchMove={onTouchMove}
-            onTouchEnd={onTouchEnd}
-          >
-            <div style={grab} />
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <div style={{ fontWeight: 700 }}>Cost Breakdown</div>
-              <button onClick={() => setOpen(false)} style={{ border: 'none', background: 'transparent', fontSize: 18 }}>×</button>
-            </div>
-
-            <div style={{ fontSize: 14, display: "grid", gap: 6 }}>
-              <div>Hotels: <b>{formatINR(hotelsTotal)}</b></div>
-              <div>Ferries: <b>{formatINR(ferryTotal)}</b></div>
-              <div>Ground transport: <b>{formatINR(logisticsTotal)}</b></div>
-              <div>Add-ons: <b>{formatINR(addonsTotal)}</b></div>
-              <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: 8, marginTop: 6 }}>
-                Total: <b>{formatINR(grandTotal)}</b>
-              </div>
-            </div>
-
-            <button style={cta} onClick={() => alert("Lead submit from mobile summary")}>
-              Request to Book
-            </button>
+      {/* Overlay + bottom sheet */}
+      <div
+        id="force-pill-ov"
+        style={{
+          display: 'none',
+          position: 'fixed',
+          inset: 0,
+          zIndex: 10000,
+          background: 'rgba(15,23,42,0.45)',
+          alignItems: 'flex-end'
+        }}
+        onClick={(e) => {
+          if (e.target.id === 'force-pill-ov') e.currentTarget.style.display = 'none';
+        }}
+      >
+        <div
+          style={{
+            width: '100%',
+            background: '#fff',
+            borderTopLeftRadius: 16,
+            borderTopRightRadius: 16,
+            padding: 16,
+            boxShadow: '0 -12px 32px rgba(0,0,0,0.25)',
+            maxHeight: '70vh',
+            overflow: 'auto'
+          }}
+        >
+          <div style={{ width: 48, height: 4, borderRadius: 4, background: '#e5e7eb', margin: '4px auto 12px auto' }} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <div style={{ fontWeight: 700 }}>Cost Breakdown</div>
+            <button
+              onClick={() => { document.getElementById('force-pill-ov').style.display = 'none'; }}
+              style={{ border: 'none', background: 'transparent', fontSize: 22, lineHeight: 1 }}
+              aria-label="Close"
+            >×</button>
           </div>
+
+          <div style={{ fontSize: 14, display: 'grid', gap: 8 }}>
+            <div>Hotels: <b>{formatINR(hotelsTotal)}</b></div>
+            <div>Ferries: <b>{formatINR(ferryTotal)}</b></div>
+            <div>Ground transport: <b>{formatINR(logisticsTotal)}</b></div>
+            <div>Add-ons: <b>{formatINR(addonsTotal)}</b></div>
+            <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: 8, marginTop: 6 }}>
+              Total: <b>{formatINR(hotelsTotal + addonsTotal + logisticsTotal + ferryTotal)}</b>
+            </div>
+          </div>
+
+          <button
+            onClick={() => alert('Lead submit from mobile summary')}
+            style={{
+              marginTop: 14,
+              width: '100%',
+              padding: 12,
+              borderRadius: 10,
+              border: '1px solid '#0ea5e9',
+              background: '#0ea5e9',
+              color: '#fff',
+              fontWeight: 700
+            }}
+          >
+            Request to Book
+          </button>
         </div>
-      )}
-    </>
+      </div>
+      {/* --- END FORCE-SHOW MOBILE SUMMARY --- */}
+    </div>
   );
 }
 
