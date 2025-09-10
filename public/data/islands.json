@@ -1,0 +1,72 @@
+[
+  {
+    "code": "PB",
+    "name": "Port Blair (South Andaman)",
+    "region": "South Andaman",
+    "order": 1,
+    "aliases": ["port blair", "south andaman", "pb", "port-blair", "port blair (south andaman)"]
+  },
+  {
+    "code": "HV",
+    "name": "Havelock (Swaraj Dweep)",
+    "region": "South Andaman",
+    "order": 2,
+    "aliases": ["havelock", "swaraj dweep", "swaraj", "havelock (swaraj dweep)"]
+  },
+  {
+    "code": "NL",
+    "name": "Neil (Shaheed Dweep)",
+    "region": "South Andaman",
+    "order": 3,
+    "aliases": ["neil", "shaheed dweep", "shaheed", "neil (shaheed dweep)"]
+  },
+  {
+    "code": "BT",
+    "name": "Baratang (Middle Andaman)",
+    "region": "Middle Andaman",
+    "order": 4,
+    "aliases": ["baratang", "baratang (middle andaman)"]
+  },
+  {
+    "code": "RG",
+    "name": "Rangat (Middle Andaman)",
+    "region": "Middle Andaman",
+    "order": 5,
+    "aliases": ["rangat", "rangat (middle andaman)"]
+  },
+  {
+    "code": "MB",
+    "name": "Mayabunder (Middle Andaman)",
+    "region": "Middle Andaman",
+    "order": 6,
+    "aliases": ["mayabunder", "mayabunder (middle andaman)"]
+  },
+  {
+    "code": "LI",
+    "name": "Long Island (Middle Andaman)",
+    "region": "Middle Andaman",
+    "order": 7,
+    "aliases": ["long island", "long island (middle andaman)"]
+  },
+  {
+    "code": "DP",
+    "name": "Diglipur (North Andaman)",
+    "region": "North Andaman",
+    "order": 8,
+    "aliases": ["diglipur", "diglipur (north andaman)"]
+  },
+  {
+    "code": "LA",
+    "name": "Little Andaman",
+    "region": "Little Andaman",
+    "order": 9,
+    "aliases": ["little", "little-andaman", "little andaman"]
+  },
+  {
+    "code": "RX",
+    "name": "Remote/Expeditions",
+    "region": "Outer Islands",
+    "order": 10,
+    "aliases": ["remote", "expeditions", "outer islands", "remote/expeditions"]
+  }
+]
