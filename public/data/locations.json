@@ -1,50 +1,81 @@
 [
-  {
-    "id": "pb_airport",
-    "name": "Veer Savarkar International Airport",
-    "island": "Port Blair",
-    "best_time": "Arrival",
-    "duration_hrs": 0.5,
-    "tags": ["arrival", "start"]
-  },
-  {
-    "id": "loc_cellular",
-    "name": "Cellular Jail",
-    "island": "Port Blair",
-    "best_time": "Morning, Evening",
-    "duration_hrs": 1.5,
-    "tags": ["culture", "history", "family"]
-  },
-  {
-    "id": "loc_corbyns",
-    "name": "Corbyn’s Cove Beach",
-    "island": "Port Blair",
-    "best_time": "Afternoon",
-    "duration_hrs": 2,
-    "tags": ["beach", "easy"]
-  },
-  {
-    "id": "loc_elephant",
-    "name": "Elephant Beach",
-    "island": "Havelock",
-    "best_time": "Morning",
-    "duration_hrs": 3,
-    "tags": ["beach", "snorkel"]
-  },
-  {
-    "id": "loc_radhanagar",
-    "name": "Radhanagar Beach",
-    "island": "Havelock",
-    "best_time": "Sunset",
-    "duration_hrs": 3,
-    "tags": ["beach", "sunset"]
-  },
-  {
-    "id": "loc_natural_bridge",
-    "name": "Natural Bridge",
-    "island": "Neil",
-    "best_time": "Morning (low tide)",
-    "duration_hrs": 2,
-    "tags": ["viewpoint", "offbeat", "family"]
-  }
+  { "id":"PB001","island":"Port Blair (South Andaman)","location":"Veer Savarkar International Airport (IXZ)","moods":["family"],"brief":"Primary arrival/departure airport for Andaman trips.","typicalHours":1,"bestTime":"Year-round","suggestedAdventureIds":[] },
+
+  { "id":"PB002","island":"Port Blair (South Andaman)","location":"Cellular Jail","moods":["family","romantic"],"brief":"National memorial and key historic site; evening Light & Sound show available.","typicalHours":2,"bestTime":"Year-round","suggestedAdventureIds":["dinner_cruise"] },
+  { "id":"PB003","island":"Port Blair (South Andaman)","location":"Light & Sound Show (Cellular Jail)","moods":["family","romantic"],"brief":"Evening narrative show illuminating Andaman’s freedom history.","typicalHours":1,"bestTime":"Oct–May","suggestedAdventureIds":[] },
+  { "id":"PB004","island":"Port Blair (South Andaman)","location":"Corbyn’s Cove Beach","moods":["family","romantic"],"brief":"Easy beach near town; popular for jet ski & seafront strolls.","typicalHours":2,"bestTime":"Oct–May","suggestedAdventureIds":["jet_ski","sofa_ride","banana_boat"] },
+  { "id":"PB005","island":"Port Blair (South Andaman)","location":"Chidiya Tapu (Sunset Point)","moods":["romantic","family"],"brief":"Sunset viewpoint with birdlife and calm waters.","typicalHours":2,"bestTime":"Oct–May","suggestedAdventureIds":[] },
+  { "id":"PB006","island":"Port Blair (South Andaman)","location":"Munda Pahad Trek (Chidiya Tapu)","moods":["adventure","offbeat"],"brief":"Short coastal trek to a panoramic cliff point.","typicalHours":2,"bestTime":"Oct–Mar","suggestedAdventureIds":["trek_munda_pahad"] },
+  { "id":"PB007","island":"Port Blair (South Andaman)","location":"Wandoor Beach","moods":["family"],"brief":"Gateway to Mahatma Gandhi Marine National Park.","typicalHours":2,"bestTime":"Oct–May","suggestedAdventureIds":[] },
+  { "id":"PB008","island":"Port Blair (South Andaman)","location":"Jolly Buoy Island (Snorkeling)","moods":["family","adventure"],"brief":"Classic clear-water snorkel site (permit/seasonal rotation with Red Skin).","typicalHours":5,"bestTime":"Nov–May","suggestedAdventureIds":["snorkeling_guided","glass_bottom_boat"] },
+  { "id":"PB009","island":"Port Blair (South Andaman)","location":"Red Skin Island (Snorkeling)","moods":["family","adventure"],"brief":"Alternate to Jolly Buoy with rich coral and fish.","typicalHours":5,"bestTime":"Nov–May","suggestedAdventureIds":["snorkeling_guided","glass_bottom_boat"] },
+  { "id":"PB010","island":"Port Blair (South Andaman)","location":"Mahatma Gandhi Marine National Park (Wandoor)","moods":["family"],"brief":"Park HQ for Jolly Buoy/Red Skin permits and exhibits.","typicalHours":1,"bestTime":"Nov–May","suggestedAdventureIds":[] },
+  { "id":"PB011","island":"Port Blair (South Andaman)","location":"Samudrika Naval Marine Museum","moods":["family"],"brief":"Marine life, tribal history, and island exhibits.","typicalHours":1,"bestTime":"Year-round","suggestedAdventureIds":[] },
+  { "id":"PB012","island":"Port Blair (South Andaman)","location":"Anthropological Museum","moods":["family"],"brief":"Showcases Andaman & Nicobar tribes and culture.","typicalHours":1,"bestTime":"Year-round","suggestedAdventureIds":[] },
+  { "id":"PB013","island":"Port Blair (South Andaman)","location":"Fisheries Museum (Aquarium)","moods":["family"],"brief":"Small aquarium with regional marine species.","typicalHours":1,"bestTime":"Year-round","suggestedAdventureIds":[] },
+  { "id":"PB014","island":"Port Blair (South Andaman)","location":"Science Centre","moods":["family"],"brief":"Hands-on exhibits; good with kids.","typicalHours":1,"bestTime":"Year-round","suggestedAdventureIds":[] },
+  { "id":"PB015","island":"Port Blair (South Andaman)","location":"Chatham Saw Mill & Museum","moods":["family","offbeat"],"brief":"One of Asia’s oldest saw mills; museum & heritage walk.","typicalHours":1.5,"bestTime":"Year-round","suggestedAdventureIds":[] },
+  { "id":"PB016","island":"Port Blair (South Andaman)","location":"Mount Manipur (Mount Harriet) National Park","moods":["adventure","family"],"brief":"Cooler hilltop views; short walks and viewpoints.","typicalHours":3,"bestTime":"Oct–Mar","suggestedAdventureIds":["picnic_hike_easy"] },
+  { "id":"PB017","island":"Port Blair (South Andaman)","location":"North Bay Island (Water Sports)","moods":["family","adventure"],"brief":"Busy hub for sea walk, snorkelling, semi-submarine rides.","typicalHours":4,"bestTime":"Oct–May","suggestedAdventureIds":["sea_walk","semi_submarine","snorkeling_guided","glass_bottom_boat"] },
+  { "id":"PB018","island":"Port Blair (South Andaman)","location":"Ross Island / Netaji Subhash Chandra Bose Island","moods":["family","romantic"],"brief":"Beautiful ruins overgrown with roots; short heritage walk.","typicalHours":2,"bestTime":"Oct–Mar","suggestedAdventureIds":["heritage_walk"] },
+  { "id":"PB019","island":"Port Blair (South Andaman)","location":"Marina Park & Water Sports Complex","moods":["family"],"brief":"Seafront promenade; jetty for many excursions.","typicalHours":1,"bestTime":"Year-round","suggestedAdventureIds":[] },
+  { "id":"PB020","island":"Port Blair (South Andaman)","location":"Viper Island","moods":["offbeat","family"],"brief":"Ruins and quiet views, less visited.","typicalHours":2,"bestTime":"Oct–Mar","suggestedAdventureIds":[] },
+  { "id":"PB021","island":"Port Blair (South Andaman)","location":"Jogger’s Park (Runway View)","moods":["romantic","family"],"brief":"Elevated park overlooking airport runway; evening views.","typicalHours":1,"bestTime":"Year-round","suggestedAdventureIds":[] },
+  { "id":"PB022","island":"Port Blair (South Andaman)","location":"Collinpur Beach","moods":["offbeat","romantic"],"brief":"Quiet beach away from the city; good for an evening drive.","typicalHours":2,"bestTime":"Oct–May","suggestedAdventureIds":[] },
+  { "id":"PB023","island":"Port Blair (South Andaman)","location":"Flag Point","moods":["family"],"brief":"Historic tricolor flag site on the seafront.","typicalHours":0.5,"bestTime":"Year-round","suggestedAdventureIds":[] },
+  { "id":"PB024","island":"Port Blair (South Andaman)","location":"Japanese Bunkers (various)","moods":["offbeat","family"],"brief":"WWII-era bunkers dotted around the coast.","typicalHours":1,"bestTime":"Year-round","suggestedAdventureIds":[] },
+  { "id":"PB025","island":"Port Blair (South Andaman)","location":"Sippighat Agricultural Farm (Birding)","moods":["offbeat","family"],"brief":"Wetlands and farm belts; spot local birdlife.","typicalHours":1.5,"bestTime":"Nov–Mar","suggestedAdventureIds":["birding_walk"] },
+  { "id":"PB026","island":"Port Blair (South Andaman)","location":"Rajiv Gandhi Water Sports Complex","moods":["family"],"brief":"Ticketing/start point for many short boat trips.","typicalHours":1,"bestTime":"Year-round","suggestedAdventureIds":[] },
+
+  { "id":"HV001","island":"Havelock (Swaraj Dweep)","location":"Radhanagar Beach (Beach No.7)","moods":["family","romantic"],"brief":"Iconic sunset beach with wide, soft sands.","typicalHours":2,"bestTime":"Oct–Mar","suggestedAdventureIds":["sunset_photography"] },
+  { "id":"HV002","island":"Havelock (Swaraj Dweep)","location":"Kalapatthar Beach","moods":["romantic","family"],"brief":"Long shoreline with dark rocks and photo points.","typicalHours":1.5,"bestTime":"Oct–Mar","suggestedAdventureIds":[] },
+  { "id":"HV003","island":"Havelock (Swaraj Dweep)","location":"Elephant Beach","moods":["family","adventure"],"brief":"Short boat/trek from Havelock; sea walk & snorkel hub.","typicalHours":4,"bestTime":"Oct–May","suggestedAdventureIds":["sea_walk","snorkeling_guided","glass_bottom_boat"] },
+  { "id":"HV004","island":"Havelock (Swaraj Dweep)","location":"Govind Nagar / Vijaynagar Beach (No.5)","moods":["romantic","family"],"brief":"Calm lagoon waters with cafés and easy swims.","typicalHours":2,"bestTime":"Oct–Mar","suggestedAdventureIds":["discover_scuba_try_dive"] },
+  { "id":"HV005","island":"Havelock (Swaraj Dweep)","location":"Nemo Reef (Discover Scuba site)","moods":["adventure"],"brief":"Beginner-friendly reef for first-time scuba divers.","typicalHours":3,"bestTime":"Oct–May","suggestedAdventureIds":["discover_scuba_try_dive"] },
+  { "id":"HV006","island":"Havelock (Swaraj Dweep)","location":"Mangrove Kayaking (Day/Night)","moods":["adventure","romantic"],"brief":"Guided kayaking through mangroves; bioluminescence on select nights.","typicalHours":2,"bestTime":"Nov–Mar","suggestedAdventureIds":["kayaking_day","kayaking_biolum"] },
+  { "id":"HV007","island":"Havelock (Swaraj Dweep)","location":"The Lighthouse / The Wall (Dive Sites)","moods":["adventure"],"brief":"Boat dives for certified divers with dramatic drop-offs.","typicalHours":4,"bestTime":"Nov–Apr","suggestedAdventureIds":["scuba_fun_dive"] },
+  { "id":"HV008","island":"Havelock (Swaraj Dweep)","location":"Govind Nagar Market & Cafés","moods":["family","romantic"],"brief":"Cafés and shops close to main beaches.","typicalHours":1.5,"bestTime":"Year-round","suggestedAdventureIds":[] },
+  { "id":"HV009","island":"Havelock (Swaraj Dweep)","location":"Beach No.3 & No.1 Shoreline Walks","moods":["romantic","offbeat"],"brief":"Quieter beach belts for long walks.","typicalHours":1.5,"bestTime":"Oct–Mar","suggestedAdventureIds":[] },
+
+  { "id":"NL001","island":"Neil (Shaheed Dweep)","location":"Bharatpur Beach (Glass-bottom/Water Sports)","moods":["family","adventure"],"brief":"Lagoon beach with water sports and boat rides.","typicalHours":3,"bestTime":"Oct–May","suggestedAdventureIds":["glass_bottom_boat","snorkeling_guided"] },
+  { "id":"NL002","island":"Neil (Shaheed Dweep)","location":"Laxmanpur Beach I (Sunset)","moods":["romantic","family"],"brief":"Best sunset bay on Neil with wide horizons.","typicalHours":1.5,"bestTime":"Oct–Mar","suggestedAdventureIds":["sunset_photography"] },
+  { "id":"NL003","island":"Neil (Shaheed Dweep)","location":"Laxmanpur Beach II (Natural Bridge)","moods":["family","offbeat"],"brief":"Tide-pool bridge formations; go at low tide.","typicalHours":1.5,"bestTime":"Oct–May","suggestedAdventureIds":["guided_nature_walk"] },
+  { "id":"NL004","island":"Neil (Shaheed Dweep)","location":"Sitapur Beach (Sunrise)","moods":["romantic"],"brief":"Eastern sunrise point with small coves.","typicalHours":1,"bestTime":"Oct–Mar","suggestedAdventureIds":[] },
+  { "id":"NL005","island":"Neil (Shaheed Dweep)","location":"Ramnagar Beach","moods":["offbeat","family"],"brief":"Less crowded beach; simple facilities.","typicalHours":1.5,"bestTime":"Oct–Mar","suggestedAdventureIds":[] },
+
+  { "id":"BT001","island":"Baratang (Middle Andaman)","location":"Baratang Limestone Caves","moods":["adventure","family"],"brief":"Speedboat through mangroves to limestone formations.","typicalHours":5,"bestTime":"Nov–Apr","suggestedAdventureIds":["mangrove_boat_baratang","limestone_caves_baratang"] },
+  { "id":"BT002","island":"Baratang (Middle Andaman)","location":"Baratang Mud Volcano","moods":["offbeat","adventure"],"brief":"Small natural mud eruptions; short walk involved.","typicalHours":1,"bestTime":"Nov–Mar","suggestedAdventureIds":[] },
+  { "id":"BT003","island":"Baratang (Middle Andaman)","location":"Mangrove Boat Ride (Baratang)","moods":["family","adventure"],"brief":"Canopied mangrove channels en route to the caves.","typicalHours":1,"bestTime":"Nov–Apr","suggestedAdventureIds":["mangrove_boat_baratang"] },
+
+  { "id":"RG001","island":"Rangat (Middle Andaman)","location":"Amkunj Beach & Eco Park","moods":["family"],"brief":"Eco-friendly beach park with driftwood installations.","typicalHours":1.5,"bestTime":"Oct–Mar","suggestedAdventureIds":[] },
+  { "id":"RG002","island":"Rangat (Middle Andaman)","location":"Dhani Nallah Mangrove Walkway","moods":["family","offbeat"],"brief":"Long wooden boardwalk across mangroves to the beach.","typicalHours":1.5,"bestTime":"Nov–Mar","suggestedAdventureIds":["guided_nature_walk"] },
+  { "id":"RG003","island":"Rangat (Middle Andaman)","location":"Morrice Dera Beach","moods":["offbeat","romantic"],"brief":"Rocky, photogenic beach; fewer visitors.","typicalHours":1,"bestTime":"Nov–Mar","suggestedAdventureIds":[] },
+  { "id":"RG004","island":"Rangat (Middle Andaman)","location":"Yerrata Mangrove Park","moods":["family","offbeat"],"brief":"Observation tower and mangrove learning centre.","typicalHours":1,"bestTime":"Nov–Mar","suggestedAdventureIds":[] },
+
+  { "id":"MB001","island":"Mayabunder (Middle Andaman)","location":"Karmatang Beach (Turtle Season)","moods":["family","offbeat"],"brief":"Long beach with seasonal turtle nesting.","typicalHours":2,"bestTime":"Dec–Mar","suggestedAdventureIds":["turtle_watch_guided"] },
+  { "id":"MB002","island":"Mayabunder (Middle Andaman)","location":"Avis Island","moods":["romantic","offbeat"],"brief":"Small islet with clear waters; boat trip from Mayabunder.","typicalHours":3,"bestTime":"Nov–Apr","suggestedAdventureIds":["snorkeling_guided","picnic_hike_easy"] },
+  { "id":"MB003","island":"Mayabunder (Middle Andaman)","location":"Austin Strait Viewpoints","moods":["offbeat","romantic"],"brief":"Roadside viewpoints over the channels.","typicalHours":1,"bestTime":"Nov–Mar","suggestedAdventureIds":[] },
+
+  { "id":"LI001","island":"Long Island (Middle Andaman)","location":"Lalaji Bay Beach","moods":["romantic","offbeat"],"brief":"Beautiful long bay; trek/boat access; remote vibe.","typicalHours":4,"bestTime":"Nov–Apr","suggestedAdventureIds":["snorkeling_guided"] },
+  { "id":"LI002","island":"Long Island (Middle Andaman)","location":"Merk Bay (North Passage Island)","moods":["offbeat","adventure"],"brief":"Boat excursion to a pristine sandbar & reefs.","typicalHours":5,"bestTime":"Nov–Apr","suggestedAdventureIds":["snorkeling_guided","glass_bottom_boat"] },
+  { "id":"LI003","island":"Long Island (Middle Andaman)","location":"Guitar Island Sandbar","moods":["offbeat","romantic"],"brief":"Shallow sandbar shaped like a guitar; tide-dependent.","typicalHours":3,"bestTime":"Nov–Apr","suggestedAdventureIds":["drone_photography"] },
+
+  { "id":"DP001","island":"Diglipur (North Andaman)","location":"Ross & Smith Twin Islands","moods":["romantic","family"],"brief":"Twin islands linked by a sandbar; postcard views.","typicalHours":4,"bestTime":"Nov–Apr","suggestedAdventureIds":["snorkeling_guided"] },
+  { "id":"DP002","island":"Diglipur (North Andaman)","location":"Saddle Peak National Park (Trek)","moods":["adventure","offbeat"],"brief":"Highest peak in Andamans; full-day forest trek.","typicalHours":8,"bestTime":"Nov–Feb","suggestedAdventureIds":["trek_saddle_peak"] },
+  { "id":"DP003","island":"Diglipur (North Andaman)","location":"Kalipur Beach (Turtle Nesting)","moods":["family","offbeat"],"brief":"Black sand beach with seasonal turtle nesting.","typicalHours":2,"bestTime":"Dec–Mar","suggestedAdventureIds":["turtle_watch_guided"] },
+  { "id":"DP004","island":"Diglipur (North Andaman)","location":"Ramnagar Beach (Diglipur)","moods":["offbeat","family"],"brief":"Quieter beach near Kalipur; simple facilities.","typicalHours":1.5,"bestTime":"Nov–Mar","suggestedAdventureIds":[] },
+  { "id":"DP005","island":"Diglipur (North Andaman)","location":"Mud Volcano (Shyam Nagar)","moods":["offbeat"],"brief":"Small mud vents amid low hills; short walk.","typicalHours":1,"bestTime":"Nov–Mar","suggestedAdventureIds":[] },
+  { "id":"DP006","island":"Diglipur (North Andaman)","location":"Alfred Caves (Seasonal Trek)","moods":["adventure","offbeat"],"brief":"Seasonal forest hike to limestone cave clusters.","typicalHours":4,"bestTime":"Jan–Mar","suggestedAdventureIds":["guided_nature_walk"] },
+
+  { "id":"LA001","island":"Little Andaman","location":"Butler Bay Beach (Surf Spot)","moods":["adventure","romantic"],"brief":"Popular surf breaks; long sandy arc.","typicalHours":3,"bestTime":"Dec–Mar","suggestedAdventureIds":["surf_lesson"] },
+  { "id":"LA002","island":"Little Andaman","location":"White Surf Waterfall","moods":["family"],"brief":"Short walk to a broad cascade in the forest.","typicalHours":2,"bestTime":"Nov–Mar","suggestedAdventureIds":[] },
+  { "id":"LA003","island":"Little Andaman","location":"Whisper Wave Waterfall (Jungle Trek)","moods":["adventure","offbeat"],"brief":"Forest trek to a multi-tier waterfall and pools.","typicalHours":3,"bestTime":"Nov–Mar","suggestedAdventureIds":["guided_nature_walk"] },
+  { "id":"LA004","island":"Little Andaman","location":"Hut Bay (Market & Jetty)","moods":["offbeat","family"],"brief":"Gateway town with basic services and jetty.","typicalHours":1,"bestTime":"Year-round","suggestedAdventureIds":[] },
+
+  { "id":"RX001","island":"Remote/Expeditions","location":"Barren Island (Active Volcano Cruise/Scuba)","moods":["adventure","offbeat"],"brief":"Long-range cruise/dive near India’s only active volcano.","typicalHours":10,"bestTime":"Jan–Apr","suggestedAdventureIds":["scuba_fun_dive","game_fishing_halfday"] },
+  { "id":"RX002","island":"Remote/Expeditions","location":"South Cinque Island (Marine Reserve)","moods":["adventure","offbeat"],"brief":"Pristine reef systems; permits/charters required.","typicalHours":8,"bestTime":"Jan–Apr","suggestedAdventureIds":["snorkeling_guided","scuba_fun_dive"] },
+  { "id":"RX003","island":"Remote/Expeditions","location":"North Cinque Island (Marine Reserve)","moods":["adventure","offbeat"],"brief":"Clear lagoons and reefs; advanced planning needed.","typicalHours":8,"bestTime":"Jan–Apr","suggestedAdventureIds":["snorkeling_guided","scuba_fun_dive"] },
+  { "id":"RX004","island":"Remote/Expeditions","location":"Inglis Island (Day Excursion)","moods":["offbeat","romantic"],"brief":"Quiet islet for snorkel/picnic on permit basis.","typicalHours":6,"bestTime":"Nov–Apr","suggestedAdventureIds":["snorkeling_guided","picnic_hike_easy"] },
+  { "id":"RX005","island":"Remote/Expeditions","location":"Turtle Island Sandbanks (Seasonal)","moods":["offbeat","romantic"],"brief":"Shifting sandbars with shallow turquoise water.","typicalHours":4,"bestTime":"Dec–Mar","suggestedAdventureIds":["drone_photography"] },
+  { "id":"RX006","island":"Remote/Expeditions","location":"Parrot Island (Near Baratang/Rangat)","moods":["romantic","offbeat"],"brief":"Evening spectacle of parrots returning to roost (seasonal).","typicalHours":2,"bestTime":"Nov–Mar","suggestedAdventureIds":["boat_sunset"] }
 ]
