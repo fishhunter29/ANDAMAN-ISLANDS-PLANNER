@@ -207,30 +207,57 @@ export default function App() {
   const [locAdventures, setLocAdventures] = useState([]);
   const [dataStatus, setDataStatus] = useState("loading"); // loading | ready | error
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const [locRes, actRes, ferRes, mapRes] = await Promise.all([
-          fetch("/data/locations.json"),
-          fetch("/data/activities.json"),
-          fetch("/data/ferries.json"),
-          fetch("/data/location_adventures.json").catch(() => ({ json: async () => [] })),
-        ]);
-        const [locJson, actJson, ferJson, mapJson] = await Promise.all([
-          locRes.json(), actRes.json(), ferRes.json(), mapRes.json()
-        ]);
-        setLocations(locJson || []);
-        setActivities(actJson || []);
-        setFerries(ferJson || []); // reserved for future seat-map integrations
-        setLocAdventures(mapJson || []);
-        setDataStatus("ready");
-      } catch (e) {
-        console.error("Data load error:", e);
-        setDataStatus("error");
-      }
-    })();
-  }, []);
+ useEffect(() => {
+  (async () => {
+    const withTimeout = (promise, ms, label) =>
+      Promise.race([
+        promise,
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
+        ),
+      ]);
 
+    const fetchJSON = async (path, label) => {
+      try {
+        const res = await withTimeout(fetch(path, { cache: "no-store" }), 8000, label);
+        if (!res.ok) throw new Error(`${label} ${res.status} ${res.statusText}`);
+        const ct = res.headers.get("content-type") || "";
+        if (!ct.includes("application/json")) {
+          throw new Error(`${label} returned non-JSON content-type: ${ct}`);
+        }
+        return res.json();
+      } catch (e) {
+        console.error(`[data] ${label} failed:`, e);
+        return null; // allow partial success
+      }
+    };
+
+    try {
+      const [locs, acts, fers, map] = await Promise.all([
+        fetchJSON("/data/locations.json", "locations"),
+        fetchJSON("/data/activities.json", "activities"),
+        fetchJSON("/data/ferries.json", "ferries"),
+        fetchJSON("/data/location_adventures.json", "location_adventures"),
+      ]);
+
+      const safeLocs = Array.isArray(locs) ? locs : [];
+      const safeActs = Array.isArray(acts) ? acts : [];
+      const safeFers = Array.isArray(fers) ? fers : [];
+      const safeMap  = Array.isArray(map)  ? map  : [];
+
+      setLocations(safeLocs);
+      setActivities(safeActs);
+      setFerries(safeFers);
+      setLocAdventures(safeMap);
+
+      setDataStatus("ready");
+    } catch (e) {
+      console.error("Data load fatal error:", e);
+      setDataStatus("error");
+    }
+  })();
+}, []);
+  
   const islandsList = useMemo(() => {
     const s = new Set(locations.map((l) => l.island).filter(Boolean));
     return s.size ? Array.from(s) : DEFAULT_ISLANDS;
