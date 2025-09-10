@@ -1,0 +1,31 @@
+[
+  { "locationId": "cellular_jail", "adventureIds": ["light_sound_show", "city_sightseeing_pb"] },
+  { "locationId": "corbyns_cove", "adventureIds": ["corbyns_cove_water_sports", "city_sightseeing_pb"] },
+  { "locationId": "ross_island", "adventureIds": ["ross_island_heritage_walk", "north_bay_snorkel"] },
+  { "locationId": "north_bay_island", "adventureIds": ["north_bay_snorkel"] },
+  { "locationId": "chidiya_tapu", "adventureIds": ["city_sightseeing_pb"] },
+
+  { "locationId": "radhanagar_beach", "adventureIds": ["sunset_cruise_hl", "scuba_discover_hl"] },
+  { "locationId": "elephant_beach", "adventureIds": ["sea_walk_hl", "kayaking_mangroves_hl"] },
+  { "locationId": "kalapathar_beach", "adventureIds": ["kayaking_mangroves_hl"] },
+
+  { "locationId": "bharatpur_beach", "adventureIds": ["glass_bottom_neil", "snorkel_neil"] },
+  { "locationId": "laxmanpur_beach", "adventureIds": ["cycling_neil"] },
+  { "locationId": "sitapur_beach", "adventureIds": ["cycling_neil"] },
+
+  { "locationId": "baratang_limestone_caves", "adventureIds": ["baratang_limestone_boat", "mud_volcano_visit"] },
+  { "locationId": "mud_volcano_baratang", "adventureIds": ["mud_volcano_visit"] },
+
+  { "locationId": "rangat_mangrove_walkway", "adventureIds": ["mangrove_walkway_rangat", "dhani_nallah_beach_time"] },
+  { "locationId": "dhani_nallah_beach", "adventureIds": ["dhani_nallah_beach_time"] },
+
+  { "locationId": "karmatang_beach", "adventureIds": ["karmatang_beach_turtles"] },
+
+  { "locationId": "long_island_blue_lagoon", "adventureIds": ["long_island_snorkel", "long_island_day_hike"] },
+
+  { "locationId": "saddle_peak", "adventureIds": ["saddle_peak_trek"] },
+  { "locationId": "ross_and_smith_islands", "adventureIds": ["ross_smith_boat_day"] },
+
+  { "locationId": "little_andaman_surf_beach", "adventureIds": ["little_andaman_surf_lesson"] },
+  { "locationId": "white_surf_waterfall", "adventureIds": ["white_surf_waterfall_trip"] }
+]
