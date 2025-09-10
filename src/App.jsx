@@ -813,7 +813,7 @@ export default function CreateTourWireframeDemo() {
               width: '100%',
               padding: 12,
               borderRadius: 10,
-              border: '1px solid '#0ea5e9',
+            border: `1px solid #0ea5e9`,
               background: '#0ea5e9',
               color: '#fff',
               fontWeight: 700
