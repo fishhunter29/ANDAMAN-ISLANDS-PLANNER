@@ -61,7 +61,6 @@ export default function MobileSummaryBar({
           right: 0,
           bottom: 0,
           zIndex: 60,
-          // make sure it truly touches edges and respects notches
           paddingBottom: "max(env(safe-area-inset-bottom), 0px)"
         }}
       >
@@ -73,11 +72,10 @@ export default function MobileSummaryBar({
           style={{
             width: "100%",
             border: 0,
-            borderRadius: 0, // full edge-to-edge
+            borderRadius: 0,
             display: "grid",
             gridTemplateColumns: "1fr 1fr",
             alignItems: "center",
-            // modern cyan/teal gradient background for the bar
             background:
               "linear-gradient(90deg, #0891b2 0%, #06b6d4 50%, #22d3ee 100%)",
             color: "white",
@@ -96,7 +94,6 @@ export default function MobileSummaryBar({
               style={{
                 fontSize: 12,
                 fontWeight: 800,
-                // trend look: deep teal chip
                 background: "rgba(255,255,255,.15)",
                 border: "1px solid rgba(255,255,255,.25)",
                 color: "white",
@@ -134,7 +131,7 @@ export default function MobileSummaryBar({
             <span
               style={{
                 background: "white",
-                color: "#0f172a", // 'shining' deep black/slate
+                color: "#0f172a",
                 padding: "8px 12px",
                 borderRadius: 12,
                 fontWeight: 900,
@@ -147,18 +144,19 @@ export default function MobileSummaryBar({
           </div>
         </button>
 
-        {/* SLIDE PANEL */}
+        {/* SLIDE PANEL with animation */}
         <div
           id="mobile-summary-panel"
           role="region"
           aria-label="Trip summary details"
           style={{
-            overflow: "hidden",
             background: "white",
             borderTop: "1px solid #e5e7eb",
-            transition: "max-height 220ms ease",
             boxShadow: "0 -12px 28px rgba(0,0,0,.18)",
-            maxHeight: open ? 420 : 0
+            overflow: "hidden",
+            transform: open ? "translateY(0%)" : "translateY(100%)",
+            transition: "transform 240ms ease",
+            willChange: "transform"
           }}
         >
           <div style={{ padding: "12px 12px 8px" }}>
