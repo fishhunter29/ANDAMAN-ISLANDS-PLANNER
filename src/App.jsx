@@ -1,5 +1,7 @@
+// path: src/App.jsx
 import React, { useMemo, useState, useEffect } from "react";
-import MobileSummaryBar from "./components/MobileSummaryBar.jsx";
+import MobileSummaryBar from "./components/MobileSummaryBar"; // extensionless: works for .tsx/.jsx
+import "./style.css";
 
 /** =========================
  *  Helpers (safe + simple)
@@ -65,6 +67,29 @@ const P2P_RATE_PER_HOP = 500;
 const SCOOTER_DAY_RATE = 800;
 
 const SEATMAP_URL = "https://seatmap.example.com"; // replace with your real seat-map URL
+
+/** ==========================================
+ *  Normalization utilities
+ *  ========================================== */
+const slugify = (s = "") =>
+  s
+    .toLowerCase()
+    .replace(/[\(\)\[\]]/g, " ")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+const normalizeLocation = (raw) => {
+  // Your JSON uses: { id, island, location, typicalHours, bestTime, moods, brief }
+  const name = raw.name || raw.location || "";
+  return {
+    ...raw,
+    name, // unify on .name in UI
+    durationHrs: Number.isFinite(raw.typicalHours) ? raw.typicalHours : raw.durationHrs ?? 2,
+    bestTimes: raw.bestTimes || (raw.bestTime ? [raw.bestTime] : []),
+    slug: raw.slug || slugify(name),
+    image: raw.image || "",
+  };
+};
 
 /** ==========================================
  *  Itinerary generator (duration-aware)
@@ -207,57 +232,78 @@ export default function App() {
   const [locAdventures, setLocAdventures] = useState([]);
   const [dataStatus, setDataStatus] = useState("loading"); // loading | ready | error
 
- useEffect(() => {
-  (async () => {
-    const withTimeout = (promise, ms, label) =>
-      Promise.race([
-        promise,
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
-        ),
-      ]);
+  useEffect(() => {
+    (async () => {
+      const withTimeout = (promise, ms, label) =>
+        Promise.race([
+          promise,
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
+          ),
+        ]);
 
-    const fetchJSON = async (path, label) => {
-      try {
-        const res = await withTimeout(fetch(path, { cache: "no-store" }), 8000, label);
-        if (!res.ok) throw new Error(`${label} ${res.status} ${res.statusText}`);
-        const ct = res.headers.get("content-type") || "";
-        if (!ct.includes("application/json")) {
-          throw new Error(`${label} returned non-JSON content-type: ${ct}`);
+      // Use BASE_URL so it also works when deployed under a subpath
+      const base = import.meta?.env?.BASE_URL || "/";
+
+      const fetchJSON = async (path, label) => {
+        try {
+          const res = await withTimeout(fetch(`${base}data/${path}`, { cache: "no-store" }), 8000, label);
+          if (!res.ok) throw new Error(`${label} ${res.status} ${res.statusText}`);
+          const ct = res.headers.get("content-type") || "";
+          if (!ct.includes("application/json")) {
+            throw new Error(`${label} returned non-JSON content-type: ${ct}`);
+          }
+          return res.json();
+        } catch (e) {
+          console.error(`[data] ${label} failed:`, e);
+          return null; // allow partial success
         }
-        return res.json();
+      };
+
+      try {
+        const [locs, acts, fers, map] = await Promise.all([
+          fetchJSON("locations.json", "locations"),
+          fetchJSON("activities.json", "activities"),
+          fetchJSON("ferries.json", "ferries"),
+          fetchJSON("location_adventures.json", "location_adventures"),
+        ]);
+
+        const rawLocs = Array.isArray(locs) ? locs : [];
+        const safeActs = Array.isArray(acts) ? acts : [];
+        const safeFers = Array.isArray(fers) ? fers : [];
+        const safeMap  = Array.isArray(map)  ? map  : [];
+
+        // Normalize locations
+        const normLocs = rawLocs.map(normalizeLocation);
+
+        // Build name-slug index for mapping adventure slugs -> PBxxx IDs
+        const slugToId = new Map();
+        const idToSlug = new Map();
+        normLocs.forEach((l) => {
+          const s = l.slug || slugify(l.name || "");
+          if (s) slugToId.set(s, l.id);
+          idToSlug.set(l.id, s);
+        });
+
+        // Convert location_adventures entries from {locationId: <slug>} → {locationId: <PBxxx>}
+        const resolvedMap = safeMap.map((m) => {
+          const maybeId = slugToId.get(m.locationId) || m.locationId; // fallback unchanged if not found
+          return { ...m, locationId: maybeId };
+        });
+
+        setLocations(normLocs);
+        setActivities(safeActs);
+        setFerries(safeFers);
+        setLocAdventures(resolvedMap);
+
+        setDataStatus("ready");
       } catch (e) {
-        console.error(`[data] ${label} failed:`, e);
-        return null; // allow partial success
+        console.error("Data load fatal error:", e);
+        setDataStatus("error");
       }
-    };
+    })();
+  }, []);
 
-    try {
-      const [locs, acts, fers, map] = await Promise.all([
-        fetchJSON("/data/locations.json", "locations"),
-        fetchJSON("/data/activities.json", "activities"),
-        fetchJSON("/data/ferries.json", "ferries"),
-        fetchJSON("/data/location_adventures.json", "location_adventures"),
-      ]);
-
-      const safeLocs = Array.isArray(locs) ? locs : [];
-      const safeActs = Array.isArray(acts) ? acts : [];
-      const safeFers = Array.isArray(fers) ? fers : [];
-      const safeMap  = Array.isArray(map)  ? map  : [];
-
-      setLocations(safeLocs);
-      setActivities(safeActs);
-      setFerries(safeFers);
-      setLocAdventures(safeMap);
-
-      setDataStatus("ready");
-    } catch (e) {
-      console.error("Data load fatal error:", e);
-      setDataStatus("error");
-    }
-  })();
-}, []);
-  
   const islandsList = useMemo(() => {
     const s = new Set(locations.map((l) => l.island).filter(Boolean));
     return s.size ? Array.from(s) : DEFAULT_ISLANDS;
@@ -276,7 +322,7 @@ export default function App() {
 
   // hide airport from selection (arrival is default)
   const selectableLocations = useMemo(
-    () => locations.filter(l => !/airport/i.test(l.name || "")),
+    () => locations.filter(l => !/airport/i.test((l.name || "").toLowerCase())),
     [locations]
   );
   const selectedLocs = useMemo(
@@ -384,13 +430,12 @@ export default function App() {
   // Step 2: add-ons (suggested then fallback)
   const suggestedActivities = useMemo(() => {
     const sel = new Set(selectedIds);
-    // if mapping exists for a selected location → show mapped first (unique)
+    // mapping exists for a selected location (after we resolved slugs to PBxxx in loader)
     const mappedIds = new Set();
     locAdventures.forEach(m => {
       if (sel.has(m.locationId)) (m.adventureIds || []).forEach(id => mappedIds.add(id));
     });
     const mapped = activities.filter(a => mappedIds.has(a.id));
-
     if (mapped.length) return mapped;
 
     // otherwise fallback by island overlap
