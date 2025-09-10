@@ -705,3 +705,17 @@ function Stepper({ step, setStep }) {
     </div>
   );
 }
+
+/* ✅ Missing before — now added back */
+function FooterNav({ onPrev, onNext, nextLabel = "Next" }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", marginTop: 12 }}>
+      <button onClick={onPrev} disabled={!onPrev} style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #e5e7eb", background: "white" }}>
+        Back
+      </button>
+      <button onClick={onNext} style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #0ea5e9", background: "#0ea5e9", color: "white", fontWeight: 700 }}>
+        {nextLabel}
+      </button>
+    </div>
+  );
+}
