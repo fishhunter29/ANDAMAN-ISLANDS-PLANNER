@@ -16,7 +16,7 @@ const addDays = (yyyy_mm_dd, n) => {
   return d.toISOString().slice(0, 10);
 };
 
-// a neutral beachy SVG as a data-URI (no asset file needed)
+// beachy inline placeholder (no file needed)
 const DEFAULT_BEACH_IMG =
   "data:image/svg+xml;utf8," +
   encodeURIComponent(
@@ -58,7 +58,7 @@ const normalizeMoods = (arr = []) => {
   return Array.from(out);
 };
 
-// If a location has no moods, infer some
+// infer moods when missing
 function inferMoods(loc) {
   const moods = new Set();
   const interest = (loc.interest || loc.brief || "").toLowerCase();
@@ -85,7 +85,12 @@ function inferMoods(loc) {
 }
 
 const nameOf = (l) => l?.name || l?.location || "";
-const durOf = (l) => (Number.isFinite(l?.durationHrs) ? l.durationHrs : (Number.isFinite(l?.typicalHours) ? l.typicalHours : 2));
+const durOf = (l) =>
+  Number.isFinite(l?.durationHrs)
+    ? l.durationHrs
+    : Number.isFinite(l?.typicalHours)
+    ? l.typicalHours
+    : 2;
 
 /* -----------------------------
    Static pricing & lists
@@ -113,7 +118,7 @@ const CAB_MODELS = [
 const P2P_RATE_PER_HOP = 500;
 const SCOOTER_DAY_RATE = 800;
 
-const SEATMAP_URL = "https://seatmap.example.com"; // replace with real URL
+const SEATMAP_URL = "https://seatmap.example.com";
 
 /* -----------------------------
    Itinerary generator
@@ -154,7 +159,7 @@ function generateItineraryDays(selectedLocs, startFromPB = true) {
   const byIsland = {};
   selectedLocs.forEach((l) => ((byIsland[l.island] ||= []).push(l)));
 
-  // sort islands and force PB first
+  // sort and force PB first
   let order = Object.keys(byIsland).sort(
     (a, b) => DEFAULT_ISLANDS.indexOf(a) - DEFAULT_ISLANDS.indexOf(b)
   );
@@ -164,7 +169,7 @@ function generateItineraryDays(selectedLocs, startFromPB = true) {
     else order = [pb, ...order];
   }
 
-  // build per-island days (~7h/day)
+  // build days (~7h/day)
   order.forEach((island, idx) => {
     const locs = orderByBestTime(byIsland[island] || []);
     let bucket = [];
@@ -218,7 +223,7 @@ function generateItineraryDays(selectedLocs, startFromPB = true) {
     }
   });
 
-  // force return to PB + departure
+  // return to PB + departure
   const lastIsland = days[days.length - 1]?.island;
   if (lastIsland !== "Port Blair (South Andaman)") {
     days.push({
@@ -277,14 +282,14 @@ export default function App() {
 
       setRawLocations(Array.isArray(locs) ? locs : []);
       setActivities(Array.isArray(acts) ? acts : []);
-      setFerries(Array.isArray(fers) ? fers : []); // not used yet in UI
+      setFerries(Array.isArray(fers) ? fers : []);
       setLocAdventures(Array.isArray(map) ? map : []);
 
       setDataStatus("ready");
     })();
   }, []);
 
-  // normalize locations to a unified shape the UI expects
+  // normalize
   const locations = useMemo(() => {
     return rawLocations.map((l) => ({
       ...l,
@@ -304,7 +309,8 @@ export default function App() {
   }, [locations]);
 
   // —— App state
-  const [step, setStep] = useState(0); // 0 Basics, 1 Adventures, 2 Locations, 3 Itin, 4 Hotels, 5 Transport
+  // NEW ORDER: 0 Basics, 1 Locations, 2 Adventures, 3 Itinerary, 4 Hotels, 5 Transport
+  const [step, setStep] = useState(0);
   const [startDate, setStartDate] = useState("");
   const [adults, setAdults] = useState(2);
   const [infants, setInfants] = useState(0);
@@ -314,7 +320,7 @@ export default function App() {
   // selection
   const [selectedIds, setSelectedIds] = useState([]);
 
-  // hide airport from selection list
+  // hide airport from selection
   const selectableLocations = useMemo(
     () => locations.filter((l) => !/airport/i.test(nameOf(l))),
     [locations]
@@ -349,20 +355,22 @@ export default function App() {
     if (!copy.length) return;
     const lastIdx = copy.length - 1;
     if (copy[lastIdx].items.some((it) => it.type === "departure")) {
-      // insert before last (departure) day
       copy.splice(lastIdx, 0, {
         island: copy[i]?.island || "Port Blair (South Andaman)",
         items: [],
         transport: "Point-to-Point",
       });
     } else {
-      copy.splice(i + 1, 0, { island: copy[i]?.island || "Port Blair (South Andaman)", items: [], transport: "Point-to-Point" });
+      copy.splice(i + 1, 0, {
+        island: copy[i]?.island || "Port Blair (South Andaman)",
+        items: [],
+        transport: "Point-to-Point",
+      });
     }
     setDays(copy);
   };
   const deleteDay = (index) => {
     const copy = [...days];
-    // prevent deleting the final departure day
     const isLastDeparture =
       index === copy.length - 1 && copy[index].items.some((it) => it.type === "departure");
     if (isLastDeparture) return;
@@ -425,10 +433,10 @@ export default function App() {
   // transport essentials
   const [essentials, setEssentials] = useState({
     ferryClass: "Deluxe",
-    cabModelId: CAB_MODELS[1].id, // default SUV
+    cabModelId: CAB_MODELS[1].id,
   });
 
-  // scooters (separate section)
+  // scooters
   const [scooterIslands, setScooterIslands] = useState(new Set());
   const toggleScooter = (isl) => {
     const next = new Set(scooterIslands);
@@ -441,8 +449,7 @@ export default function App() {
   const suggestedActivities = useMemo(() => {
     if (!selectedLocs.length) return [];
     const selectedIslands = new Set(selectedLocs.map((l) => l.island));
-    const islandMatch = activities.filter((a) => (a.islands || []).some((i) => selectedIslands.has(i)));
-    return islandMatch;
+    return activities.filter((a) => (a.islands || []).some((i) => selectedIslands.has(i)));
   }, [activities, selectedLocs]);
 
   const activitiesByIsland = useMemo(() => {
@@ -566,8 +573,101 @@ export default function App() {
             </Card>
           )}
 
-          {/* STEP 1: Adventures (optional) */}
+          {/* STEP 1: Select Locations */}
           {step === 1 && (
+            <Card title="Select Locations">
+              <Row>
+                <Field label="Island">
+                  <select value={islandFilter} onChange={(e) => setIslandFilter(e.target.value)}>
+                    <option>All</option>
+                    {islandsList.map((i) => (
+                      <option key={i}>{i}</option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Mood of trip">
+                  <select value={moodFilter} onChange={(e) => setMoodFilter(e.target.value)}>
+                    <option>All</option>
+                    {CANONICAL_MOODS.map((m) => (
+                      <option key={m}>{m}</option>
+                    ))}
+                  </select>
+                </Field>
+                <div style={{ fontSize: 12, color: "#475569", alignSelf: "end" }}>
+                  {selectedLocs.length} selected
+                </div>
+              </Row>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px,1fr))", gap: 12 }}>
+                {filteredLocations.map((l) => {
+                  const picked = selectedIds.includes(l.id);
+                  return (
+                    <div key={l.id} style={{ border: "1px solid #e5e7eb", background: "white", borderRadius: 12, padding: 12 }}>
+                      <div
+                        style={{
+                          height: 120,
+                          borderRadius: 8,
+                          marginBottom: 8,
+                          background: `url(${l.image || DEFAULT_BEACH_IMG}) center/cover`,
+                        }}
+                      />
+                      <b style={{ fontSize: 14 }}>{nameOf(l)}</b>
+                      <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
+                        {l.island} • {durOf(l)}h
+                      </div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
+                        {(l.moods || []).slice(0, 4).map((m) => (
+                          <span key={m} style={{ fontSize: 10, padding: "2px 6px", borderRadius: 999, border: "1px solid #e5e7eb", color: "#334155", background: "#f8fafc" }}>
+                            {m}
+                          </span>
+                        ))}
+                      </div>
+
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginTop: 8 }}>
+                        <button
+                          onClick={() => openModalFor(l)}
+                          style={{ padding: "8px 10px", borderRadius: 8, border: "1px solid #e5e7eb", background: "white", fontWeight: 600 }}
+                        >
+                          Explore
+                        </button>
+                        <button
+                          onClick={() => setStep(2)}   // <-- Adventures is now step 2
+                          style={{ padding: "8px 10px", borderRadius: 8, border: "1px solid #0ea5e9", background: "white", color: "#0ea5e9", fontWeight: 700 }}
+                        >
+                          View Adventures
+                        </button>
+                      </div>
+
+                      <button
+                        onClick={() =>
+                          setSelectedIds((prev) =>
+                            prev.includes(l.id) ? prev.filter((x) => x !== l.id) : [...prev, l.id]
+                          )
+                        }
+                        style={{
+                          marginTop: 8,
+                          width: "100%",
+                          padding: "8px 10px",
+                          borderRadius: 8,
+                          border: "1px solid #0ea5e9",
+                          background: picked ? "#0ea5e9" : "white",
+                          color: picked ? "white" : "#0ea5e9",
+                          fontWeight: 700,
+                        }}
+                      >
+                        {picked ? "Selected" : "Select"}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <FooterNav onPrev={() => setStep(0)} onNext={() => setStep(2)} />
+            </Card>
+          )}
+
+          {/* STEP 2: Adventures (Optional) */}
+          {step === 2 && (
             <Card title="Adventures (Optional)">
               <div style={{ fontSize: 12, color: "#475569", marginBottom: 10 }}>
                 Suggested adventures appear first from your selected locations (if any). Then explore all adventures island-wise.
@@ -638,101 +738,6 @@ export default function App() {
                     </div>
                   </div>
                 ))}
-              </div>
-
-              <FooterNav onPrev={() => setStep(0)} onNext={() => setStep(2)} />
-            </Card>
-          )}
-
-          {/* STEP 2: Select Locations */}
-          {step === 2 && (
-            <Card title="Select Locations">
-              <Row>
-                <Field label="Island">
-                  <select value={islandFilter} onChange={(e) => setIslandFilter(e.target.value)}>
-                    <option>All</option>
-                    {islandsList.map((i) => (
-                      <option key={i}>{i}</option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label="Mood of trip">
-                  <select value={moodFilter} onChange={(e) => setMoodFilter(e.target.value)}>
-                    <option>All</option>
-                    {CANONICAL_MOODS.map((m) => (
-                      <option key={m}>{m}</option>
-                    ))}
-                  </select>
-                </Field>
-                <div style={{ fontSize: 12, color: "#475569", alignSelf: "end" }}>
-                  {selectedLocs.length} selected
-                </div>
-              </Row>
-
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px,1fr))", gap: 12 }}>
-                {filteredLocations.map((l) => {
-                  const picked = selectedIds.includes(l.id);
-                  return (
-                    <div key={l.id} style={{ border: "1px solid #e5e7eb", background: "white", borderRadius: 12, padding: 12 }}>
-                      {/* hero */}
-                      <div
-                        style={{
-                          height: 120,
-                          borderRadius: 8,
-                          marginBottom: 8,
-                          background: `url(${l.image || DEFAULT_BEACH_IMG}) center/cover`,
-                        }}
-                      />
-                      <b style={{ fontSize: 14 }}>{nameOf(l)}</b>
-                      <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
-                        {l.island} • {durOf(l)}h
-                      </div>
-                      {/* Mood chips */}
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
-                        {(l.moods || []).slice(0, 4).map((m) => (
-                          <span key={m} style={{ fontSize: 10, padding: "2px 6px", borderRadius: 999, border: "1px solid #e5e7eb", color: "#334155", background: "#f8fafc" }}>
-                            {m}
-                          </span>
-                        ))}
-                      </div>
-
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginTop: 8 }}>
-                        <button
-                          onClick={() => openModalFor(l)}
-                          style={{ padding: "8px 10px", borderRadius: 8, border: "1px solid #e5e7eb", background: "white", fontWeight: 600 }}
-                        >
-                          Explore
-                        </button>
-                        <button
-                          onClick={() => setStep(1)}
-                          style={{ padding: "8px 10px", borderRadius: 8, border: "1px solid #0ea5e9", background: "white", color: "#0ea5e9", fontWeight: 700 }}
-                        >
-                          View Adventures
-                        </button>
-                      </div>
-
-                      <button
-                        onClick={() =>
-                          setSelectedIds((prev) =>
-                            prev.includes(l.id) ? prev.filter((x) => x !== l.id) : [...prev, l.id]
-                          )
-                        }
-                        style={{
-                          marginTop: 8,
-                          width: "100%",
-                          padding: "8px 10px",
-                          borderRadius: 8,
-                          border: "1px solid #0ea5e9",
-                          background: picked ? "#0ea5e9" : "white",
-                          color: picked ? "white" : "#0ea5e9",
-                          fontWeight: 700,
-                        }}
-                      >
-                        {picked ? "Selected" : "Select"}
-                      </button>
-                    </div>
-                  );
-                })}
               </div>
 
               <FooterNav onPrev={() => setStep(1)} onNext={() => setStep(3)} />
@@ -842,7 +847,7 @@ export default function App() {
                 })}
               </div>
 
-              {/* nights summary blocks remain (not removed) */}
+              {/* nights summary (not removed) */}
               <div style={{ marginTop: 16 }}>
                 {Object.entries(nightsByIsland).map(([isl, nights]) => (
                   <div key={isl} style={{ marginTop: 12 }}>
@@ -916,7 +921,7 @@ export default function App() {
                 </Row>
               </div>
 
-              {/* Scooters (separate major section) */}
+              {/* Scooters */}
               <div style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: 12, background: "white" }}>
                 <b>Scooter per Island</b>
                 <div style={{ fontSize: 12, color: "#475569", margin: "6px 0 8px" }}>
@@ -1026,7 +1031,7 @@ export default function App() {
                 </span>
               </div>
 
-              {/* Nearby attractions (same island) */}
+              {/* Nearby attractions */}
               <div style={{ marginTop: 12 }}>
                 <div style={{ fontSize: 12, color: "#475569", marginBottom: 6 }}><b>Nearby attractions</b> (same island)</div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -1062,7 +1067,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Suggested activities (island match or explicit map if provided) */}
+              {/* Suggested activities */}
               <div style={{ marginTop: 12 }}>
                 <div style={{ fontSize: 12, color: "#475569", marginBottom: 6 }}><b>Suggested activities</b></div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -1173,7 +1178,7 @@ function Field({ label, children }) {
   );
 }
 function Stepper({ step, setStep }) {
-  const labels = ["Trip Basics", "Adventures (Optional)", "Select Locations", "Itinerary", "Hotels", "Transport"];
+  const labels = ["Trip Basics", "Select Locations", "Adventures (Optional)", "Itinerary", "Hotels", "Transport"];
   return (
     <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 16px 12px 16px", display: "grid", gridTemplateColumns: `repeat(${labels.length},1fr)`, gap: 6 }}>
       {labels.map((label, i) => (
