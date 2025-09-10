@@ -18,7 +18,7 @@ const addDays = (yyyy_mm_dd, n) => {
   return d.toISOString().slice(0, 10);
 };
 
-// Normalize "bestTime" string to rough day-parts for ordering
+// Normalize bestTime string to day-parts for ordering
 function bestTimeToParts(bestTime) {
   const s = String(bestTime || "").toLowerCase();
   const parts = [];
@@ -28,11 +28,10 @@ function bestTimeToParts(bestTime) {
   return parts;
 }
 
-// Heuristic: infer moods if missing (kept for resilience)
+// Heuristic: infer moods if missing (resilient to sparse data)
 function inferMoods(loc) {
   const moods = new Set();
   const interest = (loc.brief || "").toLowerCase() + " " + (loc.name || "").toLowerCase();
-
   if (/snorkel|scuba|dive|trek|kayak|surf|jet|parasail/.test(interest)) moods.add("Adventure");
   if (/beach|sunset|view|cove|lagoon|mangrove/.test(interest)) moods.add("Relaxed");
   if (/museum|culture|heritage|jail|cellular|memorial/.test(interest)) moods.add("Family");
@@ -44,11 +43,8 @@ function inferMoods(loc) {
 }
 
 /** =========================
- *  Static constants
+ *  Constants
  *  ========================= */
-const DEFAULT_ISLANDS = ["Port Blair (South Andaman)", "Havelock (Swaraj Dweep)", "Neil (Shaheed Dweep)", "Long Island (Middle Andaman)", "Diglipur (North Andaman)"];
-
-// Pricing (placeholder logic you can tune later)
 const FERRY_BASE_ECON = 1500; // per pax, per leg
 const FERRY_CLASS_MULT = { Economy: 1, Deluxe: 1.4, Luxury: 1.9 };
 
@@ -66,10 +62,23 @@ const AIRPORT_NAME = "Veer Savarkar International Airport (IXZ)";
 const PB_CANON = "Port Blair (South Andaman)";
 
 /** ==========================================
+ *  Islands taxonomy normalization
+ *  ========================================== */
+function normalizeIslandName(raw, taxonomy = []) {
+  if (!raw) return raw;
+  const s = String(raw).trim().toLowerCase();
+  for (const t of taxonomy) {
+    if (t.name.toLowerCase() === s) return t.name;
+    const aliases = (t.aliases || []).map((a) => a.toLowerCase().trim());
+    if (aliases.includes(s)) return t.name;
+  }
+  return raw; // fallback
+}
+
+/** ==========================================
  *  Itinerary generator with mandatory Airport
  *  Day 1: Arrival @ PB; Last Day: Departure @ PB
- *  Inserts ferries between islands, and ensures
- *  final return to PB if needed.
+ *  Inserts ferries + auto-return to PB if needed
  *  ========================================== */
 function orderByBestTime(items) {
   const rank = (it) => {
@@ -82,9 +91,9 @@ function orderByBestTime(items) {
   return [...items].sort((a, b) => rank(a) - rank(b));
 }
 
-function generateItineraryDays(selectedLocs, startFromPB = true) {
+function generateItineraryDays(selectedLocs) {
   const days = [];
-  // Day 1 fixed arrival at PB
+  // Day 1: Arrival
   days.push({
     island: PB_CANON,
     items: [
@@ -92,11 +101,11 @@ function generateItineraryDays(selectedLocs, startFromPB = true) {
       { type: "transfer", name: "Airport → Hotel (Port Blair)" },
     ],
     transport: "Point-to-Point",
-    _locked: true, // prevent delete
+    _locked: true,
   });
 
   if (!selectedLocs.length) {
-    // Always add last-day departure even if nothing selected?
+    // still end with departure
     days.push({
       island: PB_CANON,
       items: [{ type: "departure", name: `Departure — ${AIRPORT_NAME}` }],
@@ -112,13 +121,8 @@ function generateItineraryDays(selectedLocs, startFromPB = true) {
     (byIsland[l.island] ||= []).push(l);
   });
 
-  // island order; PB first if present
-  let order = Object.keys(byIsland).sort(
-    (a, b) => DEFAULT_ISLANDS.indexOf(a) - DEFAULT_ISLANDS.indexOf(b)
-  );
-  if (startFromPB && order.includes(PB_CANON)) {
-    order = [PB_CANON, ...order.filter((x) => x !== PB_CANON)];
-  }
+  // canonical order via first appearance in data (already normalized)
+  const order = Object.keys(byIsland);
 
   // Build sightseeing days (≈7h/day, 2–4 stops/day)
   order.forEach((island, idx) => {
@@ -183,13 +187,11 @@ function generateItineraryDays(selectedLocs, startFromPB = true) {
   // Ensure last leg returns to Port Blair for departure
   const lastIsland = days.length ? days[days.length - 1].island : PB_CANON;
   if (lastIsland !== PB_CANON) {
-    // Add a ferry back to PB
     days.push({
       island: lastIsland,
       items: [{ type: "ferry", name: `Ferry ${lastIsland} → ${PB_CANON}`, time: "15:00–16:30" }],
       transport: "—",
     });
-    // Add transfer + departure on final day @ PB
     days.push({
       island: PB_CANON,
       items: [
@@ -200,7 +202,6 @@ function generateItineraryDays(selectedLocs, startFromPB = true) {
       _locked: true,
     });
   } else {
-    // Already at PB → just add departure
     days.push({
       island: PB_CANON,
       items: [{ type: "departure", name: `Departure — ${AIRPORT_NAME}` }],
@@ -216,31 +217,35 @@ function generateItineraryDays(selectedLocs, startFromPB = true) {
  *  App Component
  *  ========================= */
 export default function CreateTourWireframeDemo() {
-  // Load real data from /public/data
+  // Load data
   const [locationsRaw, setLocationsRaw] = useState([]);
   const [activitiesRaw, setActivitiesRaw] = useState([]);
   const [locAdvMap, setLocAdvMap] = useState([]); // [{locationId, adventureIds}]
   const [ferries, setFerries] = useState([]);
+  const [islandsTaxonomy, setIslandsTaxonomy] = useState([]);
   const [dataStatus, setDataStatus] = useState("loading"); // loading | ready | error
 
   useEffect(() => {
     (async () => {
       try {
-        const [locRes, actRes, mapRes, ferRes] = await Promise.all([
+        const [locRes, actRes, mapRes, ferRes, islRes] = await Promise.all([
           fetch("/data/locations.json"),
           fetch("/data/activities.json"),
           fetch("/data/location_adventures.json").catch(() => ({ ok: false })),
           fetch("/data/ferries.json"),
+          fetch("/data/islands.json"),
         ]);
         const locJson = await locRes.json();
         const actJson = await actRes.json();
         const mapJson = mapRes && mapRes.ok ? await mapRes.json() : [];
         const ferJson = await ferRes.json();
+        const islJson = await islRes.json();
 
         setLocationsRaw(Array.isArray(locJson) ? locJson : []);
         setActivitiesRaw(Array.isArray(actJson) ? actJson : []);
         setLocAdvMap(Array.isArray(mapJson) ? mapJson : []);
         setFerries(Array.isArray(ferJson) ? ferJson : []);
+        setIslandsTaxonomy(Array.isArray(islJson) ? islJson : []);
         setDataStatus("ready");
       } catch (e) {
         console.error("Data load error:", e);
@@ -251,19 +256,22 @@ export default function CreateTourWireframeDemo() {
 
   // Normalize locations to internal shape {id,island,name,durationHrs,moods,brief,bestTimes[]}
   const locations = useMemo(() => {
-    return locationsRaw.map((l) => ({
-      id: l.id,
-      island: l.island,
-      name: l.location || l.name,
-      durationHrs: Number.isFinite(l.typicalHours) ? l.typicalHours : l.durationHrs,
-      moods: Array.isArray(l.moods) && l.moods.length ? l.moods : inferMoods(l),
-      brief: l.brief || "",
-      bestTimes: bestTimeToParts(l.bestTime),
-      image: l.image || null,
-    }));
-  }, [locationsRaw]);
+    return locationsRaw.map((l) => {
+      const canonicalIsland = normalizeIslandName(l.island || l.region || "", islandsTaxonomy);
+      return {
+        id: l.id,
+        island: canonicalIsland,
+        name: l.location || l.name,
+        durationHrs: Number.isFinite(l.typicalHours) ? l.typicalHours : l.durationHrs,
+        moods: Array.isArray(l.moods) && l.moods.length ? l.moods : inferMoods(l),
+        brief: l.brief || "",
+        bestTimes: bestTimeToParts(l.bestTime),
+        image: l.image || null,
+      };
+    });
+  }, [locationsRaw, islandsTaxonomy]);
 
-  // Normalize activities to have a "price" and a "islands" array
+  // Normalize activities to have a "price" and an "islands" array
   const activities = useMemo(() => {
     return activitiesRaw.map((a) => ({
       ...a,
@@ -272,18 +280,24 @@ export default function CreateTourWireframeDemo() {
     }));
   }, [activitiesRaw]);
 
+  // Island list in taxonomy order (only those present)
   const islandsList = useMemo(() => {
-    const s = new Set(locations.map((l) => l.island).filter(Boolean));
-    return s.size ? Array.from(s) : DEFAULT_ISLANDS;
-  }, [locations]);
+    if (!islandsTaxonomy.length) {
+      const s = new Set(locations.map((l) => l.island).filter(Boolean));
+      return Array.from(s);
+    }
+    const present = new Set(locations.map((l) => l.island));
+    return islandsTaxonomy
+      .filter((t) => present.has(t.name))
+      .sort((a, b) => (a.order || 999) - (b.order || 999))
+      .map((t) => t.name);
+  }, [locations, islandsTaxonomy]);
 
   // —— App state
   const [step, setStep] = useState(0);
   const [startDate, setStartDate] = useState(""); // optional
   const [adults, setAdults] = useState(2);
   const [infants, setInfants] = useState(0);
-  const pax = adults + infants;
-  const [startPB, setStartPB] = useState(true);
 
   // Step 1: selection
   const [selectedIds, setSelectedIds] = useState([]);
@@ -313,18 +327,18 @@ export default function CreateTourWireframeDemo() {
   );
 
   // scooters per island
+  thead;
   const [scooterIslands, setScooterIslands] = useState(new Set());
 
-  // Step 3: itinerary (note: step index changed)
+  // Step 3: itinerary state (auto-generated from selections)
   const [days, setDays] = useState([]);
   useEffect(() => {
-    setDays(generateItineraryDays(selectedLocs, startPB));
-  }, [selectedLocs, startPB]);
+    setDays(generateItineraryDays(selectedLocs));
+  }, [selectedLocs]);
 
   // Day helpers
   const addEmptyDayAfter = (index) => {
     const copy = [...days];
-    // don't insert inside locked last-day departure block: allow, but after current index is fine
     copy.splice(index + 1, 0, {
       island: copy[index]?.island || PB_CANON,
       items: [],
@@ -358,7 +372,6 @@ export default function CreateTourWireframeDemo() {
   const nightsByIsland = useMemo(() => {
     const map = {};
     days.forEach((day) => {
-      // don't count ferry-only days
       if (day.items.some((i) => i.type === "ferry")) return;
       map[day.island] = (map[day.island] || 0) + 1;
     });
@@ -382,12 +395,17 @@ export default function CreateTourWireframeDemo() {
       ],
       "Long Island (Middle Andaman)": [{ id: "li_h1", name: "LI Mid Hotel", tier: "Mid", sell_price: 6199 }],
       "Diglipur (North Andaman)": [{ id: "dg_h1", name: "DG Lodge", tier: "Value", sell_price: 2899 }],
+      "Baratang (Middle Andaman)": [{ id: "bt_h1", name: "BT Lodge", tier: "Value", sell_price: 2799 }],
+      "Rangat (Middle Andaman)": [{ id: "rg_h1", name: "RG Stay", tier: "Value", sell_price: 2699 }],
+      "Mayabunder (Middle Andaman)": [{ id: "mb_h1", name: "MB Stay", tier: "Value", sell_price: 2899 }],
+      "Little Andaman": [{ id: "la_h1", name: "LA Surf Lodge", tier: "Value", sell_price: 2499 }],
+      "Remote/Expeditions": [{ id: "rx_h1", name: "Charter/Liveaboard", tier: "Special", sell_price: 0 }],
     }),
     []
   );
   const chooseHotel = (island, hotelId) => setChosenHotels((p) => ({ ...p, [island]: hotelId }));
 
-  // Step 5: Transport & Ferries (renamed from Essentials)
+  // Step 5: Transport & Ferries
   const [essentials, setEssentials] = useState({
     ferryClass: "Deluxe",
     cabModelId: CAB_MODELS[1].id, // default SUV
@@ -405,12 +423,23 @@ export default function CreateTourWireframeDemo() {
       if (setLoc.has(m.locationId)) (m.adventureIds || []).forEach((aid) => mappedIds.add(aid));
     });
     if (!mappedIds.size) {
-      // fallback by islands of selected locations
       const selIslands = new Set(selectedLocs.map((l) => l.island));
       return activities.filter((a) => a.islands?.some((isl) => selIslands.has(isl))).slice(0, 12);
     }
     return activities.filter((a) => mappedIds.has(a.id));
   }, [locAdvMap, selectedIds, activities, selectedLocs]);
+
+  /** =========================
+   *  Modal state for Location Details
+   *  ========================= */
+  const [modalLoc, setModalLoc] = useState(null);
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape") setModalLoc(null);
+    };
+    if (modalLoc) window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [modalLoc]);
 
   /** =========================
    *  Dynamic costs
@@ -455,14 +484,13 @@ export default function CreateTourWireframeDemo() {
       if (day.items.some((i) => i.type === "ferry")) return; // ferry handled separately
       const stops = day.items.filter((i) => i.type === "location").length;
 
-      // scooter override
       if (scooterIslands.has(day.island)) {
         sum += SCOOTER_DAY_RATE;
         return;
       }
       if (day.transport === "Day Cab") sum += cabDayRate;
       else if (day.transport === "Scooter") sum += SCOOTER_DAY_RATE;
-      else sum += Math.max(1, stops - 1) * P2P_RATE_PER_HOP; // P2P
+      else sum += Math.max(1, stops - 1) * P2P_RATE_PER_HOP; // P2P per hop
     });
     return sum;
   }, [days, scooterIslands, cabDayRate]);
@@ -485,14 +513,12 @@ export default function CreateTourWireframeDemo() {
     next.has(island) ? next.delete(island) : next.add(island);
     setScooterIslands(next);
   };
-  const islandsInPlan = Array.from(new Set(days.map((d) => d.island))).filter(Boolean);
 
-  // Helper: get suggested adventures for a specific location card (max 3)
+  // Helper: suggested adventures for a location card (max 3)
   const suggestedForLocation = (loc) => {
     const mapped = locAdvMap.find((m) => m.locationId === loc.id);
     let ids = mapped?.adventureIds || [];
     if (!ids.length) {
-      // fallback by island match
       ids = activities
         .filter((a) => a.islands?.includes(loc.island))
         .slice(0, 3)
@@ -544,11 +570,6 @@ export default function CreateTourWireframeDemo() {
                 <Field label="Infants">
                   <input type="number" min={0} value={infants} onChange={(e) => setInfants(Number(e.target.value) || 0)} />
                 </Field>
-              </Row>
-              <Row>
-                <label>
-                  <input type="checkbox" checked={startPB} onChange={() => setStartPB(!startPB)} /> Start from Port Blair if present
-                </label>
               </Row>
               <FooterNav onNext={() => setStep(1)} />
             </Card>
@@ -628,10 +649,13 @@ export default function CreateTourWireframeDemo() {
                                 }
                                 title={a.name}
                                 style={{
-                                  ...pill,
-                                  borderColor: on ? "#0ea5e9" : "#94a3b8",
-                                  color: on ? "#0ea5e9" : "#334155",
+                                  border: on ? "1px solid #0ea5e9" : "1px solid #94a3b8",
                                   background: on ? "#eaf6fd" : "white",
+                                  color: on ? "#0ea5e9" : "#334155",
+                                  borderRadius: 999,
+                                  padding: "4px 8px",
+                                  fontSize: 12,
+                                  fontWeight: 600,
                                 }}
                               >
                                 {a.name}
@@ -641,23 +665,39 @@ export default function CreateTourWireframeDemo() {
                         </div>
                       )}
 
-                      <button
-                        onClick={() =>
-                          setSelectedIds((prev) => (picked ? prev.filter((x) => x !== l.id) : [...prev, l.id]))
-                        }
-                        style={{
-                          marginTop: 8,
-                          width: "100%",
-                          padding: "8px 10px",
-                          borderRadius: 8,
-                          border: "1px solid #0ea5e9",
-                          background: picked ? "#0ea5e9" : "white",
-                          color: picked ? "white" : "#0ea5e9",
-                          fontWeight: 600,
-                        }}
-                      >
-                        {picked ? "Selected" : "Select"}
-                      </button>
+                      <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                        <button
+                          onClick={() =>
+                            setSelectedIds((prev) => (picked ? prev.filter((x) => x !== l.id) : [...prev, l.id]))
+                          }
+                          style={{
+                            flex: 1,
+                            padding: "8px 10px",
+                            borderRadius: 8,
+                            border: "1px solid #0ea5e9",
+                            background: picked ? "#0ea5e9" : "white",
+                            color: picked ? "white" : "#0ea5e9",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {picked ? "Selected" : "Select"}
+                        </button>
+                        <button
+                          onClick={() => setModalLoc(l)}
+                          style={{
+                            padding: "8px 10px",
+                            borderRadius: 8,
+                            border: "1px solid #e5e7eb",
+                            background: "white",
+                            color: "#0f172a",
+                            fontWeight: 600,
+                            minWidth: 96,
+                          }}
+                          aria-label={`Details about ${l.name}`}
+                        >
+                          Details
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
@@ -667,42 +707,46 @@ export default function CreateTourWireframeDemo() {
             </Card>
           )}
 
-          {/* Step 2: Adventures & Add-ons (moved earlier) */}
+          {/* Step 2: Adventures & Add-ons */}
           {step === 2 && (
             <Card title="Adventures & Add-ons">
               <div style={{ fontSize: 12, color: "#475569", marginBottom: 8 }}>
                 Suggested for your selected locations. Add now or skip for later.
               </div>
 
-              {/* Suggested for your locations */}
+              {/* Suggested */}
               <div style={{ marginBottom: 12 }}>
                 <div style={{ fontWeight: 700, marginBottom: 6 }}>Suggested for Your Locations</div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px,1fr))", gap: 12 }}>
-                  {(suggestedActivitiesBySelection.length ? suggestedActivitiesBySelection : activities).slice(0, 12).map((a) => {
-                    const on = addonIds.includes(a.id);
-                    return (
-                      <div key={a.id} style={{ border: "1px solid #e5e7eb", background: "white", borderRadius: 12, padding: 12 }}>
-                        <div style={{ height: 80, background: "#e2e8f0", borderRadius: 8, marginBottom: 8 }} />
-                        <div style={{ fontSize: 13, fontWeight: 600 }}>{a.name}</div>
-                        <div style={{ fontSize: 12, color: "#475569" }}>{a.price ? formatINR(a.price) : "Price on request"}</div>
-                        <button
-                          onClick={() => setAddonIds((prev) => (on ? prev.filter((x) => x !== a.id) : [...prev, a.id]))}
-                          style={{
-                            marginTop: 8,
-                            width: "100%",
-                            padding: "8px 10px",
-                            borderRadius: 8,
-                            border: "1px solid #0ea5e9",
-                            background: on ? "#0ea5e9" : "white",
-                            color: on ? "white" : "#0ea5e9",
-                            fontWeight: 600,
-                          }}
-                        >
-                          {on ? "Added" : "Add"}
-                        </button>
-                      </div>
-                    );
-                  })}
+                  {(suggestedActivitiesBySelection.length ? suggestedActivitiesBySelection : activities)
+                    .slice(0, 12)
+                    .map((a) => {
+                      const on = addonIds.includes(a.id);
+                      return (
+                        <div key={a.id} style={{ border: "1px solid #e5e7eb", background: "white", borderRadius: 12, padding: 12 }}>
+                          <div style={{ height: 80, background: "#e2e8f0", borderRadius: 8, marginBottom: 8 }} />
+                          <div style={{ fontSize: 13, fontWeight: 600 }}>{a.name}</div>
+                          <div style={{ fontSize: 12, color: "#475569" }}>
+                            {a.price ? formatINR(a.price) : "Price on request"}
+                          </div>
+                          <button
+                            onClick={() => setAddonIds((prev) => (on ? prev.filter((x) => x !== a.id) : [...prev, a.id]))}
+                            style={{
+                              marginTop: 8,
+                              width: "100%",
+                              padding: "8px 10px",
+                              borderRadius: 8,
+                              border: "1px solid #0ea5e9",
+                              background: on ? "#0ea5e9" : "white",
+                              color: on ? "white" : "#0ea5e9",
+                              fontWeight: 600,
+                            }}
+                          >
+                            {on ? "Added" : "Add"}
+                          </button>
+                        </div>
+                      );
+                    })}
                 </div>
               </div>
 
@@ -715,7 +759,9 @@ export default function CreateTourWireframeDemo() {
                     <div key={a.id} style={{ border: "1px solid #e5e7eb", background: "white", borderRadius: 12, padding: 12 }}>
                       <div style={{ height: 80, background: "#e2e8f0", borderRadius: 8, marginBottom: 8 }} />
                       <div style={{ fontSize: 13, fontWeight: 600 }}>{a.name}</div>
-                      <div style={{ fontSize: 12, color: "#475569" }}>{a.price ? formatINR(a.price) : "Price on request"}</div>
+                      <div style={{ fontSize: 12, color: "#475569" }}>
+                        {a.price ? formatINR(a.price) : "Price on request"}
+                      </div>
                       <button
                         onClick={() => setAddonIds((prev) => (on ? prev.filter((x) => x !== a.id) : [...prev, a.id]))}
                         style={{
@@ -752,22 +798,32 @@ export default function CreateTourWireframeDemo() {
                   return (
                     <div key={i} style={{ border: "1px solid #e5e7eb", background: "white", borderRadius: 12, padding: 12 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                        <b>Day {i + 1} — {day.island}</b>
+                        <b>
+                          Day {i + 1} — {day.island}
+                        </b>
                         <span style={{ fontSize: 12, color: "#334155" }}>{dayLabel}</span>
                       </div>
                       <ul style={{ marginTop: 8, paddingLeft: 18, fontSize: 14 }}>
                         {day.items.map((it, k) => (
                           <li key={k} style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
                             <span>
-                              {it.type === "ferry" ? it.name :
-                               it.type === "arrival" ? it.name :
-                               it.type === "transfer" ? it.name :
-                               it.type === "departure" ? it.name :
-                               `${it.name} (${it.durationHrs}h)`}
+                              {it.type === "ferry"
+                                ? it.name
+                                : it.type === "arrival"
+                                ? it.name
+                                : it.type === "transfer"
+                                ? it.name
+                                : it.type === "departure"
+                                ? it.name
+                                : `${it.name} (${it.durationHrs}h)`}
                             </span>
                             <span style={{ display: "inline-flex", gap: 6 }}>
-                              <button onClick={() => moveItem(i, k, -1)} style={miniBtn} title="Move to previous day" disabled={i === 0}>◀︎</button>
-                              <button onClick={() => moveItem(i, k, +1)} style={miniBtn} title="Move to next day" disabled={i === days.length - 1}>▶︎</button>
+                              <button onClick={() => moveItem(i, k, -1)} style={miniBtn} title="Move to previous day" disabled={i === 0}>
+                                ◀︎
+                              </button>
+                              <button onClick={() => moveItem(i, k, +1)} style={miniBtn} title="Move to next day" disabled={i === days.length - 1}>
+                                ▶︎
+                              </button>
                             </span>
                           </li>
                         ))}
@@ -781,8 +837,12 @@ export default function CreateTourWireframeDemo() {
                             <option>Scooter</option>
                             <option>—</option>
                           </select>
-                          <button onClick={() => addEmptyDayAfter(i)} style={pillBtn} disabled={locked}>+ Add empty day after</button>
-                          <button onClick={() => deleteDay(i)} style={dangerBtn} disabled={locked || days.length <= 2}>Delete day</button>
+                          <button onClick={() => addEmptyDayAfter(i)} style={pillBtn} disabled={locked}>
+                            + Add empty day after
+                          </button>
+                          <button onClick={() => deleteDay(i)} style={dangerBtn} disabled={locked || days.length <= 2}>
+                            Delete day
+                          </button>
                         </div>
                       )}
                     </div>
@@ -790,7 +850,9 @@ export default function CreateTourWireframeDemo() {
                 })}
               </div>
               <div style={{ marginTop: 10 }}>
-                <button onClick={() => addEmptyDayAfter(days.length - 1)} style={pillBtn}>+ Add another day</button>
+                <button onClick={() => addEmptyDayAfter(days.length - 1)} style={pillBtn}>
+                  + Add another day
+                </button>
               </div>
               <FooterNav onPrev={() => setStep(2)} onNext={() => setStep(4)} />
             </Card>
@@ -801,7 +863,9 @@ export default function CreateTourWireframeDemo() {
             <Card title="Hotels by Island">
               {Object.entries(nightsByIsland).map(([island, nights]) => (
                 <div key={island} style={{ marginBottom: 16 }}>
-                  <b>{island} — {nights} night(s)</b>
+                  <b>
+                    {island} — {nights} night(s)
+                  </b>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px,1fr))", gap: 10, marginTop: 8 }}>
                     {(MOCK_HOTELS[island] || []).map((h) => {
                       const picked = chosenHotels[island] === h.id;
@@ -809,7 +873,9 @@ export default function CreateTourWireframeDemo() {
                         <div key={h.id} style={{ border: "1px solid #e5e7eb", background: "white", borderRadius: 12, padding: 12 }}>
                           <div style={{ height: 80, background: "#e2e8f0", borderRadius: 8, marginBottom: 8 }} />
                           <div style={{ fontSize: 13, fontWeight: 600 }}>{h.name}</div>
-                          <div style={{ fontSize: 12, color: "#475569" }}>{h.tier} • From {formatINR(h.sell_price)}/night</div>
+                          <div style={{ fontSize: 12, color: "#475569" }}>
+                            {h.tier} • From {formatINR(h.sell_price)}/night
+                          </div>
                           <button
                             onClick={() => chooseHotel(island, h.id)}
                             style={{
@@ -852,7 +918,14 @@ export default function CreateTourWireframeDemo() {
                     <Field label="Seat map">
                       <button
                         onClick={() => window.open(SEATMAP_URL, "_blank")}
-                        style={{ padding: "8px 10px", borderRadius: 8, border: "1px solid #0ea5e9", background: "white", color: "#0ea5e9", fontWeight: 700 }}
+                        style={{
+                          padding: "8px 10px",
+                          borderRadius: 8,
+                          border: "1px solid #0ea5e9",
+                          background: "white",
+                          color: "#0ea5e9",
+                          fontWeight: 700,
+                        }}
                       >
                         Open Seat Map
                       </button>
@@ -888,11 +961,7 @@ export default function CreateTourWireframeDemo() {
                   </div>
                 </div>
               </div>
-              <FooterNav
-                onPrev={() => setStep(4)}
-                onNext={() => alert("This would submit a lead for the full itinerary.")}
-                nextLabel="Request to Book"
-              />
+              <FooterNav onPrev={() => setStep(4)} onNext={() => alert("This would submit a lead for the full itinerary.")} nextLabel="Request to Book" />
             </Card>
           )}
         </section>
@@ -910,18 +979,10 @@ export default function CreateTourWireframeDemo() {
                   {infants ? `, ${infants} infant(s)` : ""}
                 </div>
                 <div style={{ marginTop: 8, borderTop: "1px dashed #e5e7eb", paddingTop: 8 }}>
-                  <div>
-                    Hotels: <b>{formatINR(hotelsTotal)}</b>
-                  </div>
-                  <div>
-                    Ferries: <b>{formatINR(ferryTotal)}</b>
-                  </div>
-                  <div>
-                    Ground transport: <b>{formatINR(logisticsTotal)}</b>
-                  </div>
-                  <div>
-                    Add-ons: <b>{formatINR(addonsTotal)}</b>
-                  </div>
+                  <div>Hotels: <b>{formatINR(hotelsTotal)}</b></div>
+                  <div>Ferries: <b>{formatINR(ferryTotal)}</b></div>
+                  <div>Ground transport: <b>{formatINR(logisticsTotal)}</b></div>
+                  <div>Add-ons: <b>{formatINR(addonsTotal)}</b></div>
                 </div>
                 <div style={{ marginTop: 8, borderTop: "2px solid #0ea5e9", paddingTop: 8, fontSize: 16 }}>
                   Total (indicative): <b>{formatINR(grandTotal)}</b>
@@ -1034,18 +1095,10 @@ export default function CreateTourWireframeDemo() {
           </div>
 
           <div style={{ fontSize: 14, display: "grid", gap: 8 }}>
-            <div>
-              Hotels: <b>{formatINR(hotelsTotal)}</b>
-            </div>
-            <div>
-              Ferries: <b>{formatINR(ferryTotal)}</b>
-            </div>
-            <div>
-              Ground transport: <b>{formatINR(logisticsTotal)}</b>
-            </div>
-            <div>
-              Add-ons: <b>{formatINR(addonsTotal)}</b>
-            </div>
+            <div>Hotels: <b>{formatINR(hotelsTotal)}</b></div>
+            <div>Ferries: <b>{formatINR(ferryTotal)}</b></div>
+            <div>Ground transport: <b>{formatINR(logisticsTotal)}</b></div>
+            <div>Add-ons: <b>{formatINR(addonsTotal)}</b></div>
             <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: 8, marginTop: 6 }}>
               Total: <b>{formatINR(grandTotal)}</b>
             </div>
@@ -1068,7 +1121,142 @@ export default function CreateTourWireframeDemo() {
           </button>
         </div>
       </div>
+
+      {/* Location Details Modal */}
+      {modalLoc && (
+        <LocationModal
+          loc={modalLoc}
+          onClose={() => setModalLoc(null)}
+          isSelected={selectedIds.includes(modalLoc.id)}
+          onToggleSelect={() =>
+            setSelectedIds((prev) =>
+              prev.includes(modalLoc.id)
+                ? prev.filter((x) => x !== modalLoc.id)
+                : [...prev, modalLoc.id]
+            )
+          }
+          suggested={suggestedForLocation(modalLoc)}
+          addonIds={addonIds}
+          toggleAddon={(id) =>
+            setAddonIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+          }
+        />
+      )}
       {/* --- END FORCE-SHOW MOBILE SUMMARY --- */}
+    </div>
+  );
+}
+
+/** =========================
+ *  Location Modal Component
+ *  ========================= */
+function LocationModal({ loc, onClose, isSelected, onToggleSelect, suggested, addonIds, toggleAddon }) {
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      onClick={(e) => {
+        if (e.target.id === "loc-modal-overlay") onClose();
+      }}
+      id="loc-modal-overlay"
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(15,23,42,0.55)",
+        zIndex: 11000,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 16,
+      }}
+    >
+      <div style={{ background: "#fff", borderRadius: 12, width: "min(720px, 96vw)", maxHeight: "90vh", overflow: "auto", boxShadow: "0 20px 50px rgba(0,0,0,0.35)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: 14, borderBottom: "1px solid #e5e7eb" }}>
+          <div style={{ fontWeight: 700 }}>{loc.name}</div>
+          <button onClick={onClose} aria-label="Close" style={{ border: "none", background: "transparent", fontSize: 22, lineHeight: 1 }}>×</button>
+        </div>
+
+        <div style={{ padding: 14, display: "grid", gap: 12 }}>
+          <div style={{ height: 160, background: "#e2e8f0", borderRadius: 10 }} />
+
+          <div style={{ fontSize: 13, color: "#475569" }}>
+            <div><b>Island:</b> {loc.island}</div>
+            <div><b>Typical Duration:</b> {(loc.durationHrs ?? 2)} hour(s)</div>
+          </div>
+
+          {(loc.moods || []).length > 0 && (
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {(loc.moods || []).map((m) => (
+                <span key={m} style={{ fontSize: 11, padding: "2px 6px", borderRadius: 999, border: "1px solid #e5e7eb", color: "#334155", background: "#f8fafc" }}>
+                  {m}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {loc.brief && <div style={{ fontSize: 14, color: "#0f172a" }}>{loc.brief}</div>}
+
+          {suggested.length > 0 && (
+            <div>
+              <div style={{ fontWeight: 700, marginBottom: 6 }}>Suggested adventures</div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {suggested.map((a) => {
+                  const on = addonIds.includes(a.id);
+                  return (
+                    <button
+                      key={a.id}
+                      onClick={() => toggleAddon(a.id)}
+                      title={a.name}
+                      style={{
+                        border: on ? "1px solid #0ea5e9" : "1px solid #94a3b8",
+                        background: on ? "#eaf6fd" : "white",
+                        color: on ? "#0ea5e9" : "#334155",
+                        borderRadius: 999,
+                        padding: "6px 10px",
+                        fontSize: 12,
+                        fontWeight: 600,
+                      }}
+                    >
+                      {a.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+            <button
+              onClick={onToggleSelect}
+              style={{
+                flex: 1,
+                padding: "10px 12px",
+                borderRadius: 10,
+                border: "1px solid #0ea5e9",
+                background: isSelected ? "#0ea5e9" : "white",
+                color: isSelected ? "white" : "#0ea5e9",
+                fontWeight: 700,
+              }}
+            >
+              {isSelected ? "Selected" : "Select"}
+            </button>
+            <button
+              onClick={onClose}
+              style={{
+                padding: "10px 12px",
+                borderRadius: 10,
+                border: "1px solid #e5e7eb",
+                background: "white",
+                color: "#0f172a",
+                fontWeight: 700,
+                minWidth: 120,
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
