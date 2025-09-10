@@ -1,0 +1,245 @@
+[
+  {
+    "id": "light_sound_show",
+    "name": "Cellular Jail Light & Sound Show",
+    "basePriceINR": 300,
+    "islands": ["Port Blair (South Andaman)"],
+    "durationHrs": 1.5,
+    "brief": "Historic audio-visual show at Cellular Jail narrating the freedom struggle.",
+    "image": ""
+  },
+  {
+    "id": "city_sightseeing_pb",
+    "name": "Port Blair City Sightseeing",
+    "basePriceINR": 1200,
+    "islands": ["Port Blair (South Andaman)"],
+    "durationHrs": 4,
+    "brief": "Half-day tour covering Cellular Jail, Anthropological Museum and Marina Park.",
+    "image": ""
+  },
+  {
+    "id": "corbyns_cove_water_sports",
+    "name": "Corbyn's Cove Water Sports Pack",
+    "basePriceINR": 1800,
+    "islands": ["Port Blair (South Andaman)"],
+    "durationHrs": 2,
+    "brief": "Try jetski/banana boat at the closest beach to Port Blair.",
+    "image": ""
+  },
+  {
+    "id": "ross_island_heritage_walk",
+    "name": "Ross Island Heritage Walk",
+    "basePriceINR": 600,
+    "islands": ["Port Blair (South Andaman)"],
+    "durationHrs": 2,
+    "brief": "Explore British-era ruins and deer on Ross Island.",
+    "image": ""
+  },
+  {
+    "id": "north_bay_snorkel",
+    "name": "North Bay Reef Snorkeling",
+    "basePriceINR": 1200,
+    "islands": ["Port Blair (South Andaman)"],
+    "durationHrs": 2,
+    "brief": "Snorkel the classic coral garden near Port Blair.",
+    "image": ""
+  },
+
+  {
+    "id": "scuba_discover_hl",
+    "name": "Discover Scuba Diving (Havelock)",
+    "basePriceINR": 4500,
+    "islands": ["Havelock (Swaraj Dweep)"],
+    "durationHrs": 3.5,
+    "brief": "Beginner-friendly reef dive with instructor.",
+    "image": ""
+  },
+  {
+    "id": "scuba_cert_openwater_hl",
+    "name": "Open Water Certification (3–4 days)",
+    "basePriceINR": 28000,
+    "islands": ["Havelock (Swaraj Dweep)"],
+    "durationHrs": 12,
+    "brief": "Full PADI/SSI certification course.",
+    "image": ""
+  },
+  {
+    "id": "kayaking_mangroves_hl",
+    "name": "Mangrove Kayaking (Sunrise/Sunset)",
+    "basePriceINR": 2000,
+    "islands": ["Havelock (Swaraj Dweep)"],
+    "durationHrs": 2,
+    "brief": "Guided paddle through Havelock’s mangrove creeks.",
+    "image": ""
+  },
+  {
+    "id": "sunset_cruise_hl",
+    "name": "Sunset Cruise (Havelock)",
+    "basePriceINR": 2500,
+    "islands": ["Havelock (Swaraj Dweep)"],
+    "durationHrs": 2,
+    "brief": "Golden-hour boat cruise around Radhanagar coast.",
+    "image": ""
+  },
+  {
+    "id": "sea_walk_hl",
+    "name": "Sea Walk (Havelock)",
+    "basePriceINR": 3500,
+    "islands": ["Havelock (Swaraj Dweep)"],
+    "durationHrs": 1.5,
+    "brief": "Walk on the seafloor with a helmet—great for non-swimmers.",
+    "image": ""
+  },
+
+  {
+    "id": "glass_bottom_neil",
+    "name": "Glass-bottom Boat (Neil)",
+    "basePriceINR": 1200,
+    "islands": ["Neil (Shaheed Dweep)"],
+    "durationHrs": 1,
+    "brief": "See corals and fish without getting wet.",
+    "image": ""
+  },
+  {
+    "id": "snorkel_neil",
+    "name": "Guided Snorkeling (Neil)",
+    "basePriceINR": 1500,
+    "islands": ["Neil (Shaheed Dweep)"],
+    "durationHrs": 1.5,
+    "brief": "Beach-entry snorkel with a guide; great for first-timers.",
+    "image": ""
+  },
+  {
+    "id": "cycling_neil",
+    "name": "Cycling Around Neil",
+    "basePriceINR": 700,
+    "islands": ["Neil (Shaheed Dweep)"],
+    "durationHrs": 3,
+    "brief": "Leisure cycling between Bharatpur, Laxmanpur and Sitapur.",
+    "image": ""
+  },
+
+  {
+    "id": "baratang_limestone_boat",
+    "name": "Baratang Limestone Cave Boat",
+    "basePriceINR": 1200,
+    "islands": ["Baratang (Middle Andaman)"],
+    "durationHrs": 3,
+    "brief": "Mangrove boat ride + short walk to limestone caves.",
+    "image": ""
+  },
+  {
+    "id": "mud_volcano_visit",
+    "name": "Mud Volcano Visit",
+    "basePriceINR": 400,
+    "islands": ["Baratang (Middle Andaman)"],
+    "durationHrs": 1,
+    "brief": "Quick detour to see natural mud volcanoes.",
+    "image": ""
+  },
+
+  {
+    "id": "mangrove_walkway_rangat",
+    "name": "Mangrove Walkway (Rangat)",
+    "basePriceINR": 200,
+    "islands": ["Rangat (Middle Andaman)"],
+    "durationHrs": 1,
+    "brief": "Stroll the wooden boardwalk across mangroves.",
+    "image": ""
+  },
+  {
+    "id": "dhani_nallah_beach_time",
+    "name": "Dhani Nallah Beach Time",
+    "basePriceINR": 0,
+    "islands": ["Rangat (Middle Andaman)"],
+    "durationHrs": 1.5,
+    "brief": "Relaxed, lesser-known beach stop.",
+    "image": ""
+  },
+
+  {
+    "id": "karmatang_beach_turtles",
+    "name": "Karmatang Beach & Turtle Watch (Seasonal)",
+    "basePriceINR": 0,
+    "islands": ["Mayabunder (Middle Andaman)"],
+    "durationHrs": 2,
+    "brief": "Seasonal turtle nesting (with local guidelines).",
+    "image": ""
+  },
+
+  {
+    "id": "long_island_snorkel",
+    "name": "Blue Lagoon Snorkeling (Long Island)",
+    "basePriceINR": 1500,
+    "islands": ["Long Island (Middle Andaman)"],
+    "durationHrs": 2,
+    "brief": "Snorkel the calm lagoon near Long Island jetty.",
+    "image": ""
+  },
+  {
+    "id": "long_island_day_hike",
+    "name": "Long Island Forest/Beach Hike",
+    "basePriceINR": 0,
+    "islands": ["Long Island (Middle Andaman)"],
+    "durationHrs": 3,
+    "brief": "Gentle forest trail to secluded coves.",
+    "image": ""
+  },
+
+  {
+    "id": "saddle_peak_trek",
+    "name": "Saddle Peak Trek (Full Day)",
+    "basePriceINR": 1200,
+    "islands": ["Diglipur (North Andaman)"],
+    "durationHrs": 7,
+    "brief": "Challenging trek to Andamans’ highest peak.",
+    "image": ""
+  },
+  {
+    "id": "ross_smith_boat_day",
+    "name": "Ross & Smith Islands Day Trip",
+    "basePriceINR": 2500,
+    "islands": ["Diglipur (North Andaman)"],
+    "durationHrs": 5,
+    "brief": "Twin islands joined by a sandbar; crystal waters.",
+    "image": ""
+  },
+
+  {
+    "id": "little_andaman_surf_lesson",
+    "name": "Surf Lesson (Little Andaman)",
+    "basePriceINR": 2500,
+    "islands": ["Little Andaman"],
+    "durationHrs": 2,
+    "brief": "Beginner-friendly surfing session with local instructor.",
+    "image": ""
+  },
+  {
+    "id": "white_surf_waterfall_trip",
+    "name": "White Surf Waterfall Trip",
+    "basePriceINR": 800,
+    "islands": ["Little Andaman"],
+    "durationHrs": 3,
+    "brief": "Scenic jungle ride to the waterfall and natural pools.",
+    "image": ""
+  },
+
+  {
+    "id": "liveaboard_scuba",
+    "name": "Liveaboard Scuba Expedition (Outer Reefs)",
+    "basePriceINR": 90000,
+    "islands": ["Remote/Expeditions"],
+    "durationHrs": 48,
+    "brief": "Multi-day expedition to remote banks and pinnacles.",
+    "image": ""
+  },
+  {
+    "id": "game_fishing_charter",
+    "name": "Game Fishing Charter",
+    "basePriceINR": 18000,
+    "islands": ["Remote/Expeditions"],
+    "durationHrs": 8,
+    "brief": "Full-day charter targeting pelagics (seasonal).",
+    "image": ""
+  }
+]
